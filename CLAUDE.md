@@ -36,7 +36,7 @@ If a task conflicts with these docs, **stop and ask** rather than guessing.
 
 ## Stack
 
-Astro 7 (static by default) · TypeScript strict · React only for the quiz island · plain CSS with brand tokens (no Tailwind) · Zod · Drizzle + Neon Postgres · Vercel adapter · GTM + GA4 · Vitest · Playwright · GitHub Actions · Node 22 (`.nvmrc`)
+Astro 7 (static by default) · TypeScript strict · Preact (compat mode) only for the quiz island · plain CSS with brand tokens (no Tailwind) · Zod · Drizzle + Neon Postgres · Vercel adapter · GTM + GA4 · Vitest · Playwright · GitHub Actions · Node 22 (`.nvmrc`)
 
 Astro 7 is newer than most training data. **Check the installed version's docs before using an API from memory** (config, adapters, middleware, actions, fonts). Record anything surprising in `docs/decisions.md`.
 
@@ -105,7 +105,8 @@ tests/unit/  tests/e2e/
 **Performance budgets** (Lighthouse mobile, production build)
 - Performance ≥ 95, Accessibility 100, SEO 100, Best Practices 100
 - LCP < 2.0 s, CLS < 0.05, INP < 200 ms
-- Landing JS before interaction (excluding GTM) < 60 KB gzip. The quiz island hydrates on intent (`client:visible` / on CTA), never `client:load`.
+- Landing JS before interaction (excluding GTM) < 60 KB gzip. Currently ~1 KB.
+- **Quiz island on open < 25 KB gzip** (runtime + quiz component). The island hydrates on intent (`client:visible` / on CTA), never `client:load` — but "it only loads on intent" is not a licence for it to be any size, because intent is the conversion moment (D29).
 - GTM is loaded deferred. No other third-party scripts without a decision entry.
 
 ## How to work
