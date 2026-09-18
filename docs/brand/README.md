@@ -58,6 +58,15 @@ Brand Kit/
   `blue-900`. Flagged for design to confirm — if `blue-950` is meant to exist, it should
   be added to the primitive scale and the token pointed back at it.
 - `card-bg-translucent` = `dark-900` at 60% — implemented as `color-mix()` in `tokens.css`.
+- **`text-brand` points at `blue-600` (`#0260FD`), which fails AA for small text.** Measured
+  against `bg-primary` (`#030303`) it is **4.02:1**, below the 4.5:1 AA threshold for body
+  copy — the same problem as decision D7, but on the one token whose *name* invites exactly
+  that use. Nothing in the product uses it today (verified at runtime), and product code uses
+  a project-owned alias `--text-link` → `blue-400` (**7.00:1**) instead.
+  **Suggestion for design:** repoint `text-brand` to `blue-500` (5.26:1) or `blue-400`
+  (7.00:1), or rename it to something that does not read as "the brand colour for text".
+  Left unchanged here because `tokens.css` is a verbatim copy of the brand kit and this is
+  the brand's call, not ours.
 
 ---
 _Brand Kit v1 · colors + font families. No type-scale/sizing is enforced here by design._

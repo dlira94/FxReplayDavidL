@@ -46,11 +46,37 @@ function readSaved(): Saved | null {
 	}
 }
 
+/**
+ * The email never goes to sessionStorage.
+ *
+ * The name does, because the result title is "{name}'s practice plan" and
+ * losing it would mean showing a plan addressed to nobody. The address buys
+ * nothing on restore: a visitor who reloads at step 6 is looking at the email
+ * field and can retype it, so storing it would be keeping a piece of personal
+ * data for no benefit at all (D33).
+ */
+function persistable(answers: Answers): Answers {
+	const { email: _email, ...rest } = answers;
+	return rest;
+}
+
 function writeSaved(saved: Saved): void {
 	try {
-		sessionStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+		sessionStorage.setItem(
+			STORAGE_KEY,
+			JSON.stringify({ ...saved, answers: persistable(saved.answers) }),
+		);
 	} catch {
 		/* A visitor who blocks storage still gets a working quiz. */
+	}
+}
+
+/** Cleared the moment the quiz is done: the record lives in Postgres now. */
+function clearSaved(): void {
+	try {
+		sessionStorage.removeItem(STORAGE_KEY);
+	} catch {
+		/* Nothing to do; the data is gone with the tab either way. */
 	}
 }
 
@@ -101,8 +127,12 @@ export default function Quiz({
 	}, []);
 
 	useEffect(() => {
-		if (restored.current) writeSaved({ step, answers, userId });
-	}, [step, answers, userId]);
+		// `done` guards it: recording the email changes `answers`, which would
+		// otherwise re-run this effect straight after clearSaved() and write the
+		// state back for a quiz that has already finished.
+		if (!restored.current || done) return;
+		writeSaved({ step, answers, userId });
+	}, [step, answers, userId, done]);
 
 	// Focus the new step's heading so a screen reader announces it and a
 	// keyboard user lands inside the step rather than back at the top.
@@ -251,6 +281,7 @@ export default function Quiz({
 				// Show the plan anyway (experience.md §3).
 				track('signup_email_exists');
 				setEmailExists(true);
+				clearSaved();
 				setDone(true);
 				return;
 			}
@@ -272,6 +303,8 @@ export default function Quiz({
 
 		recordAnswer('email', parsed.data);
 		track('quiz_step_complete', { step_number: 6, step_name: 'email' });
+		// Nothing left to resume, and the signup is safely in Postgres.
+		clearSaved();
 		setDone(true);
 	};
 

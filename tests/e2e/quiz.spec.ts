@@ -218,6 +218,30 @@ test.describe('the interface', () => {
 		expect(backs).toBeGreaterThan(0);
 	});
 
+	test('keeps the name in sessionStorage but never the email', async ({ page }) => {
+		await openQuiz(page);
+		await page.locator('.quiz__input').fill('Ana');
+		await page.locator('.quiz__submit').click();
+		await answerAllChoices(page);
+		await expect(page.locator('.quiz__count')).toHaveText('Step 6 of 6');
+
+		const midQuiz = await page.evaluate(() => sessionStorage.getItem('fxr_quiz'));
+		// The name is there because the result title needs it; the address is
+		// not, because a reload at step 6 shows the field anyway (D33).
+		expect(midQuiz).toContain('Ana');
+		expect(midQuiz).not.toContain('@');
+
+		await page.locator('.quiz__input').fill('storage@example.com');
+		await page.locator('.quiz__submit').click();
+		await expect(page.locator('.quiz--result')).toBeVisible();
+
+		// Completed: the record is in Postgres, so the browser copy goes.
+		const afterDone = await page.evaluate(() =>
+			sessionStorage.getItem('fxr_quiz'),
+		);
+		expect(afterDone).toBeNull();
+	});
+
 	test('restores an interrupted session on reload', async ({ page }) => {
 		await openQuiz(page);
 		await page.locator('.quiz__input').fill('Ana');

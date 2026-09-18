@@ -79,6 +79,7 @@ tests/unit/  tests/e2e/
 **Brand & UI**
 - Use **semantic tokens only** (`var(--bg-primary)`, `var(--text-primary)`, `var(--border-brand)`…). Never raw hex, never primitives in components.
 - Brand blue `#0260FD` is never used for small text (contrast 4.02:1 fails AA). Small blue text uses `blue-500` or `blue-400` via a semantic alias.
+- **Never use `--text-brand` for text.** It resolves to `#0260FD` and fails AA at any body size — it is the token whose name invites the mistake. Use `--text-link` (`blue-400`, 7.00:1). Flagged to design in `docs/brand/README.md`; `tokens.css` is a verbatim copy of the brand kit and is not edited here.
 - Headings Lato, body Nunito Sans; self-hosted, only the weights used, `font-display: swap`.
 - Mobile-first. Touch targets ≥ 44 px. Respect `prefers-reduced-motion`.
 
