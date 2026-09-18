@@ -22,6 +22,15 @@ Source of truth for every word on the page. Components read copy from `src/conte
 **Plan preview section title:** "Here's what you'll get in 2 minutes"
 **Trust line under CTA:** "Free forever plan · No credit card"
 
+**Where to practice [shared]** — one line per answer to quiz question 2. Shared across variants: the plan logic is identical between arms, only the framing differs (`experiment.md`).
+
+| Market | Line |
+|---|---|
+| Forex | EUR/USD and GBP/USD, during the London–New York overlap |
+| Futures | ES and NQ at the New York open (futures data requires a paid plan; practice the same setup on an index meanwhile) |
+| Crypto | BTC/USD and ETH/USD; the market runs 24/7, so weekends count too |
+| Indices / other | Your market's main index, at its opening session |
+
 **SEO [shared]** — identical across arms on purpose: a title that varied by variant would give search engines whichever arm the crawler happened to be assigned.
 - Title: "Try FX Replay Free — Practice trading on real historical markets"
 - Meta description: "Practice on real historical markets with no money at risk. Answer a few quick questions and get a personalized practice plan. Free forever plan, no credit card."

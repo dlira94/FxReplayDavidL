@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { SHARED_COPY } from '../../src/content/shared';
+import { SHARED_COPY, WHERE_TO_PRACTICE } from '../../src/content/shared';
 import { VARIANT_COPY } from '../../src/content/variants';
 import type { VariantCopy } from '../../src/content/variants/types';
 import { VARIANT_IDS } from '../../src/lib/variants';
@@ -109,6 +109,9 @@ describe('shared copy mirrors docs/messaging.md', () => {
 			[`faq[${i}].answer`, entry.answer] as [string, string],
 		]),
 		['footerDisclaimer', SHARED_COPY.footerDisclaimer],
+		...Object.entries(WHERE_TO_PRACTICE).map(
+			([market, line]) => [`whereToPractice.${market}`, line] as [string, string],
+		),
 	];
 
 	it.each(strings)('%s appears verbatim in the doc', (_slot, value) => {

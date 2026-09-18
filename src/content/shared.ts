@@ -77,6 +77,22 @@ export const SHARED_COPY = {
 } as const;
 
 /**
+ * "Where to practice", one line per answer to quiz question 2.
+ *
+ * Shared across arms: the plan logic is identical between variants and only
+ * the framing differs, so these lines are a constant of the experiment
+ * (docs/experiment.md). Block 3's plan.ts consumes this map; the preview uses
+ * the forex line.
+ */
+export const WHERE_TO_PRACTICE = {
+	forex: 'EUR/USD and GBP/USD, during the London–New York overlap',
+	futures:
+		'ES and NQ at the New York open (futures data requires a paid plan; practice the same setup on an index meanwhile)',
+	crypto: 'BTC/USD and ETH/USD; the market runs 24/7, so weekends count too',
+	other: "Your market's main index, at its opening session",
+} as const;
+
+/**
  * The static example shown in the plan-preview section.
  *
  * Every value is taken from the plan rules in docs/experience.md §4 for one
@@ -84,19 +100,18 @@ export const SHARED_COPY = {
  * — so the preview shows the real output of the real rules rather than an
  * idealised mock-up.
  *
- * "Where to practice" is deliberately missing: §4 names it as a plan row but
- * does not define its option strings yet, and inventing instruments here would
- * put unsourced copy on the page. It joins the preview when block 3 defines it.
+ * The profile trades forex, so the "where to practice" row shows that line.
  */
 export const SAMPLE_PLAN = {
 	/** Shown as a caption so nobody reads the sample as their own result. */
-	caption: 'Sample plan · 2–5 h a week · under a year trading',
+	caption: 'Sample plan · Forex · 2–5 h a week · under a year trading',
 	rows: [
 		{ label: 'Weekly routine', value: '3 × 60 min' },
 		{
 			label: 'Starting focus',
 			value: 'one setup, log every trade, review weekly',
 		},
+		{ label: 'Where to practice', value: WHERE_TO_PRACTICE.forex },
 		{
 			label: 'Tools to use in FX Replay',
 			value: 'journal + performance analytics',
