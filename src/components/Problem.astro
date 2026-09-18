@@ -1,0 +1,30 @@
+---
+import type { VariantCopy } from '../content/variants';
+
+interface Props {
+	copy: VariantCopy;
+}
+
+const { copy } = Astro.props;
+---
+
+<!-- Deliberately free of brand blue: this section belongs to the villain, not
+     to the guide (D24). -->
+<section class="section" aria-labelledby="problem-title">
+	<div class="container container--narrow problem">
+		<h2 id="problem-title" class="section-title">{copy.problem.title}</h2>
+		<p class="problem__body">{copy.problem.body}</p>
+	</div>
+</section>
+
+<style>
+	.problem {
+		text-align: center;
+	}
+
+	.problem__body {
+		margin-top: var(--space-5);
+		color: var(--text-secondary);
+		font-size: var(--text-lg);
+	}
+</style>
