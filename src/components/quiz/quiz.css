@@ -2,6 +2,18 @@
    someone opens the quiz. Semantic tokens only, like everything else. */
 
 .quiz {
+	/* A floor as tall as the tallest step (measured at 390px: step 3 and 4 at
+	 * 527.3px; step 1 is 371.9px).
+	 *
+	 * Two reasons, and the second is the one that shows up in a metric. The
+	 * card stops resizing under the visitor's thumb as they step through — the
+	 * page below it currently jumps on every answer. And on a reload mid-quiz
+	 * the server renders step 1, because it cannot read sessionStorage, then
+	 * hydration swaps in the restored step ~250ms later: a 155px growth that
+	 * measured CLS 0.069 against a 0.05 budget. Lighthouse never sees it,
+	 * because it needs a returning visitor with a saved session.
+	 */
+	min-height: 33rem;
 	max-width: 34rem;
 	margin-inline: auto;
 	padding: var(--space-5);
