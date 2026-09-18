@@ -199,3 +199,21 @@ test.describe('content integrity', () => {
 		await expect(page.getByText('Sample testimonial')).toHaveCount(count);
 	});
 });
+
+test.describe('rendered copy', () => {
+	test('leaves no unfilled {token} in any variant', async ({ page }) => {
+		// The plan preview shipped "{name}'s discipline training plan" to
+		// production: it renders the variant's result title before anyone has
+		// answered anything, so the token had nothing to fill it with. A raw
+		// token on a marketing page is the kind of thing every automated check
+		// passes and every human notices immediately.
+		for (const variant of ['money', 'time', 'discipline']) {
+			await page.goto(`/?variant=${variant}`);
+			const body = await page.locator('body').innerText();
+
+			expect(body, `unfilled token in the ${variant} arm`).not.toMatch(/\{[a-z_]+\}/i);
+			expect(body).not.toContain('{');
+			expect(body).not.toContain('}');
+		}
+	});
+});

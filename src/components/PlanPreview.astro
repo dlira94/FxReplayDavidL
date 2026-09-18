@@ -9,6 +9,10 @@ interface Props {
 }
 
 const { copy } = Astro.props;
+
+// `result.title` carries {name}, which nobody has given yet — rendering it here
+// printed the raw token at the visitor. The preview has its own titled slot
+// instead of borrowing a name that belongs to no one (D47).
 ---
 
 <!-- Shows the value before asking for anything: the plan is the thing being
@@ -25,7 +29,7 @@ const { copy } = Astro.props;
 
 		<article class="preview__card reveal" data-reveal="120">
 			<header class="preview__card-head">
-				<h3 class="preview__card-title">{copy.result.title}</h3>
+				<h3 class="preview__card-title">{copy.result.previewTitle}</h3>
 				<p class="preview__caption">{SAMPLE_PLAN.caption}</p>
 			</header>
 

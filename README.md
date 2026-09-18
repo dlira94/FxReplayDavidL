@@ -135,6 +135,11 @@ Mapped to the six in [`challenge.pdf`](docs/challenge.pdf).
 | **5** | **AI-Native Workflow** | [`ai-workflow.md`](docs/ai-workflow.md) — the two layers and how they fit · [`ai-log.md`](docs/ai-log.md) — what was delegated, corrected and rejected · [`CLAUDE.md`](CLAUDE.md) · [`.claude/`](.claude) — skills and agents · [`.mcp.json`](.mcp.json) |
 | **6** | **Performance Review** | [`performance.md`](docs/performance.md) — budgets, measured production numbers, and the costs a Lighthouse score does not show |
 
+**Brand & design interpretation:** [`design.md`](docs/design.md) — what I did
+with the provided typography and palette, the scales the brand kit did not
+include, the blue rule, measured contrast ratios, and where I evolved the visual
+direction.
+
 **Supporting context:** [`brief.md`](docs/brief.md) (goal and scope) ·
 [`research.md`](docs/research.md) (audience, pains, sourced claims) ·
 [`messaging.md`](docs/messaging.md) (every word on the page) ·

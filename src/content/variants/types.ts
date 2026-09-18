@@ -33,6 +33,13 @@ export interface VariantCopy {
 	result: {
 		/** Uses {name}. */
 		title: string;
+		/**
+		 * The same plan, titled for the preview on the landing — where nobody
+		 * has given a name yet. Declared rather than derived from `title`:
+		 * stripping "{name}'s " would be string surgery on approved copy, and
+		 * it would leave the first word lowercased.
+		 */
+		previewTitle: string;
 		/** May use {hours}, rendered as the range label. */
 		lead: string;
 	};

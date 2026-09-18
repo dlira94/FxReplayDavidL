@@ -12,7 +12,9 @@ Source of truth for every word on the page. Components read copy from `src/conte
 |---|---|
 | Hero | A discretionary trader who wants to get better without risking money |
 | Guide: empathy | "We've been there: learning the hard way is expensive." |
-| Guide: authority | Trusted by 1M+ traders · replay real historical markets · journal, analytics and AI mentor built in |
+| Guide: authority | Replay real historical markets · journal, analytics and AI mentor built in |
+
+> The "1M+ traders" claim lives once, as the figure on the social-proof bar. Repeating it as a guide chip made the same proof carry twice and read as padding.
 | Plan | 1. Answer a few quick questions → 2. Get your personalized practice plan → 3. Start practicing free |
 | Primary CTA | **Build my free practice plan** |
 | Transitional CTA | "See a sample plan" (scrolls to the plan preview) |
@@ -20,6 +22,13 @@ Source of truth for every word on the page. Components read copy from `src/conte
 | Failure avoided | Learning with real money, guessing, repeating the same mistakes |
 
 **Plan preview section title:** "Here's what you'll get in 2 minutes"
+**Plan preview title [variant]** — the preview shows a plan that belongs to nobody yet, so it drops the possessive rather than borrowing a stranger's name. Same words as the result title, without the `{name}`:
+
+| Variant | Preview title |
+|---|---|
+| money | Risk-free practice plan |
+| time | Weekly practice schedule |
+| discipline | Discipline training plan |
 **Trust line under CTA:** "Free forever plan · No credit card"
 
 **Where to practice [shared]** — one line per answer to quiz question 2. Shared across variants: the plan logic is identical between arms, only the framing differs (`experiment.md`).
@@ -35,7 +44,7 @@ Source of truth for every word on the page. Components read copy from `src/conte
 
 | Figure | Title | Body |
 |---|---|---|
-| 1M+ | traders | Already practising on FX Replay. |
+| 1M+ | traders | Already practicing on FX Replay. |
 | 600+ | reviews on Trustpilot | Public, and you can read every one. |
 | $0 | real money at risk | Historical data, simulated orders, every session. |
 

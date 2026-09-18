@@ -20,6 +20,7 @@ export const discipline: VariantCopy = {
 
 	result: {
 		title: "{name}'s discipline training plan",
+		previewTitle: "Discipline training plan",
 		lead: "Each session below trains one habit until it sticks.",
 	},
 

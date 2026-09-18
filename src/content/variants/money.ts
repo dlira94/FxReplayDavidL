@@ -21,6 +21,7 @@ export const money: VariantCopy = {
 
 	result: {
 		title: "{name}'s risk-free practice plan",
+		previewTitle: "Risk-free practice plan",
 		lead: "Every rep below costs you nothing. Make your mistakes here, not in your account.",
 	},
 

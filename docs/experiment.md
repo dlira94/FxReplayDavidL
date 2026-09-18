@@ -76,6 +76,52 @@ If both variants win, ship the larger lift. If they're statistically tied, ship 
 - Break the result down by `utm_source` / `utm_content` and by the quiz goal answer (Q5) as **exploratory**, not decision-making. If `discipline` wins for email traffic and `time` for paid social, the next step is personalization by channel, run as its own test.
 - Q5 gives a free signal: which pain users self-select, independent of the copy they saw.
 
+## Next experiments
+
+**The next test is the quiz itself: six steps versus a single email field.**
+
+This experiment varies the copy *inside* the quiz. It does not test the quiz —
+and the quiz is the larger bet. Six steps between a visitor and a free account
+is a real amount of friction, and nothing here tells us whether it pays for
+itself.
+
+**Why copy first.** Two reasons, and the second is the one that matters.
+
+It isolates one variable: same components, same flow, same plan logic, so a
+difference in conversion is a difference in message and nothing else. Testing
+the flow and the copy at once would produce a result nobody could attribute.
+
+And it makes the funnel legible. Six steps mean six measurable drop-off points,
+so this experiment does not just say *which* message wins — it says *where* each
+one loses people. A single-field form converts or it does not, and there is
+nothing between those two states to learn from. Running the high-resolution
+version first means the low-resolution test that follows starts with a map of
+where friction actually lives.
+
+**What the next test would measure.** Not the same primary metric, because the
+two arms are not comparable on start rate — a single field has no "start" worth
+the name.
+
+| | Quiz (control) | Single email field |
+|---|---|---|
+| **Primary** | Account creation ÷ exposed | same |
+| **Secondary** | Drop-off per step | Time from landing to submit |
+| **The real question** | | D7 activation: does a signup that answered five questions come back? |
+
+The quiz adds friction *and* intention. Someone who answered five questions
+about how they trade has told us what they want and has invested something in
+getting it; someone who typed an address has not. So the honest read is not
+signups alone — **a single field that wins on conversion and loses on
+activation is not a win**, it is a cheaper way to acquire people who never
+return. That is the same rule the current experiment already applies (§Quality
+check), and it is why the next test cannot be decided on the primary metric
+either.
+
+Also worth testing eventually, in this order: the personalized plan versus a
+generic one (does the personalization earn its build cost?), and the number of
+steps rather than their presence — four questions instead of five is a cheaper
+change than removing the quiz.
+
 ## Demo note
 
 The challenge deployment has no real traffic. The dashboard shows the readout mechanics on test data; the numbers above are the plan for production.

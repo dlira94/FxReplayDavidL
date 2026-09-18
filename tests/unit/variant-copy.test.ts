@@ -28,6 +28,7 @@ function renderedStrings(copy: VariantCopy): Array<[string, string]> {
 		['quizIntro', copy.quizIntro],
 		['emailHeadline', copy.emailHeadline],
 		['result.title', copy.result.title],
+		['result.previewTitle', copy.result.previewTitle],
 		['result.lead', copy.result.lead],
 		['quizHelpers.market', copy.quizHelpers.market],
 		['quizHelpers.experience', copy.quizHelpers.experience],

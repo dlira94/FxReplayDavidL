@@ -20,6 +20,7 @@ export const time: VariantCopy = {
 
 	result: {
 		title: "{name}'s weekly practice schedule",
+		previewTitle: "Weekly practice schedule",
 		lead: "Here's how to fit months of market experience into {hours} a week.",
 	},
 

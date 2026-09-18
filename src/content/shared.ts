@@ -60,7 +60,7 @@ export const SHARED_COPY = {
 			compact: true,
 			suffix: '+',
 			title: 'traders',
-			body: 'Already practising on FX Replay.',
+			body: 'Already practicing on FX Replay.',
 		},
 		{
 			figure: '600+',
@@ -113,8 +113,9 @@ export const SHARED_COPY = {
 	guide: {
 		empathy: "We've been there: learning the hard way is expensive.",
 		authority: [
-			'Trusted by 1M+ traders',
-			'replay real historical markets',
+			// "1M+ traders" is the figure on the social-proof bar. Repeating it
+			// here made the same proof carry twice and read as padding.
+			'Replay real historical markets',
 			'journal, analytics and AI mentor built in',
 		],
 	},
