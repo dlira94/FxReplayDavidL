@@ -1,17 +1,54 @@
 ---
-
+// Holding page. The real landing lands in the next phase: sections from
+// docs/experience.md, copy resolved per variant from src/content/variants/.
+// noindex until then — a scaffold should never be crawled as the real page.
+// Remove the robots meta with the landing.
+import '../styles/tokens.css';
 ---
 
+<!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" sizes="32x32" />
+		<title>Try FX Replay Free</title>
 	</head>
 	<body>
-		<h1>Astro</h1>
+		<main>
+			<h1>Try FX Replay Free</h1>
+			<p>Landing page in progress.</p>
+		</main>
 	</body>
 </html>
+
+<style>
+	/* Raw lengths: the brand kit defines colors and font families, but no
+	   spacing or type scale. Those get added as tokens with the landing. */
+	body {
+		margin: 0;
+		min-height: 100dvh;
+		display: grid;
+		place-content: center;
+		gap: 0.5rem;
+		padding: 1.5rem;
+		background: var(--bg-primary);
+		color: var(--text-primary);
+		font-family: var(--font-body);
+		text-align: center;
+	}
+
+	h1 {
+		margin: 0;
+		font-family: var(--font-heading);
+		font-size: 1.75rem;
+	}
+
+	p {
+		margin: 0;
+		color: var(--text-secondary);
+	}
+</style>

@@ -21,6 +21,7 @@ Evaluators care about judgment, trade-offs, measurement and the AI workflow more
 | API contract, data model, persistence | `docs/api.md` |
 | Past decisions — don't relitigate silently | `docs/decisions.md` |
 | Brand tokens | `docs/brand/tokens.css`, `docs/brand/README.md` |
+| AI system: what runs vs what's proposed | `docs/ai-workflow.md` |
 | Original challenge | `docs/challenge.pdf` |
 
 If a task conflicts with these docs, **stop and ask** rather than guessing.
@@ -32,7 +33,7 @@ If a task conflicts with these docs, **stop and ask** rather than guessing.
 
 ## Stack
 
-Astro 7 (static by default) · TypeScript strict · React only for the quiz island · plain CSS with brand tokens (no Tailwind) · Zod · Drizzle + Neon Postgres · Vercel adapter · GTM + GA4 · Vitest · Playwright · Node 22 (`.nvmrc`)
+Astro 7 (static by default) · TypeScript strict · React only for the quiz island · plain CSS with brand tokens (no Tailwind) · Zod · Drizzle + Neon Postgres · Vercel adapter · GTM + GA4 · Vitest · Playwright · GitHub Actions · Node 22 (`.nvmrc`)
 
 Astro 7 is newer than most training data. **Check the installed version's docs before using an API from memory** (config, adapters, middleware, actions, fonts). Record anything surprising in `docs/decisions.md`.
 
@@ -112,6 +113,11 @@ tests/unit/  tests/e2e/
 4. When you make or discover a decision, add a row to `docs/decisions.md`.
 5. Don't add dependencies without saying why. Prefer platform features.
 6. Never delete or overwrite files in `docs/` without asking.
+7. **You have no access to Vercel. Don't try to get any** (decisions D14, D15).
+   - The Vercel MCP is **disabled in this project** — OAuth on a Hobby scope never granted access to the project (403). The Vercel CLI and `gh` are **denied in `.claude/settings.json`**: both are signed in to David's work accounts (Vercel CLI → Receptive, `gh` → `davidPettable`), so a command meant for this project would act on a client's infrastructure. This holds for read-only commands too: an identity that can't be trusted for writes can't be trusted as evidence either.
+   - **Deploys happen only through `git push`** to the `github-dlira94` remote. Never deploy by hand.
+   - **Deploy state, preview URLs, build and runtime logs, Web Analytics: David reads them from the Vercel dashboard.** Don't claim a deploy succeeded, don't quote a preview URL you haven't been given, and don't infer either from a green build here. Say what you pushed, and ask him to confirm.
+   - Vercel MCP stays in `docs/ai-workflow.md` as proposed production tooling, not as something available now.
 
 ## Definition of done
 
@@ -124,6 +130,8 @@ tests/unit/  tests/e2e/
 
 - **Skills:** `storybrand-copy` (draft/validate variant copy against the StoryBrand frame and guardrails), `add-tracking-event` (event → types → docs in one step)
 - **Agents:** `pre-deploy-auditor` (a11y, performance, SEO, tracking coverage; uses Playwright MCP), `growth-analyst` (post-deploy: funnel per variant, drop-off, CWV, recommendations)
-- **MCP:** Mobbin (UI pattern research), Playwright (browser testing); config in `.mcp.json`
+- **MCP:** Mobbin (UI pattern research), Playwright (browser testing) — config in `.mcp.json`. That's all of them.
+- Everything else is off in `.claude/settings.json`: `disableClaudeAiConnectors` (claude.ai account connectors, D12) and `enabledPlugins` (the `vercel` plugin and its MCP, D15). Only MCP that earns its context (D12).
+- What a production setup would add, and how the agents would use it: `docs/ai-workflow.md`.
 
 David logs delegated / corrected / rejected AI work in `docs/ai-log.md`. When he rejects or corrects your output, suggest the log entry.

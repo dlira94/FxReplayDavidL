@@ -53,8 +53,10 @@ Brand Kit/
 
 ## Open questions for design
 
-- `btn-bg-primary-disabled` points at `blue-950`, which isn't defined in the primitive
-  scale (it stops at `blue-900` `#012054`). Add `blue-950` or repoint the token.
+- ~~`btn-bg-primary-disabled` points at `blue-950`, which isn't defined in the primitive
+  scale (it stops at `blue-900` `#012054`).~~ **Resolved (decision D6):** repointed to
+  `blue-900`. Flagged for design to confirm — if `blue-950` is meant to exist, it should
+  be added to the primitive scale and the token pointed back at it.
 - `card-bg-translucent` = `dark-900` at 60% — implemented as `color-mix()` in `tokens.css`.
 
 ---
