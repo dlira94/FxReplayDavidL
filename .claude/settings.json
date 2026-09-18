@@ -1,4 +1,6 @@
 {
+  "disableClaudeAiConnectors": true,
+  "enabledMcpjsonServers": ["mobbin", "playwright"],
   "permissions": {
     "allow": [
       "Bash(npm run build)",

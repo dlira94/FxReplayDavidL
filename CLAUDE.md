@@ -124,6 +124,7 @@ tests/unit/  tests/e2e/
 
 - **Skills:** `storybrand-copy` (draft/validate variant copy against the StoryBrand frame and guardrails), `add-tracking-event` (event → types → docs in one step)
 - **Agents:** `pre-deploy-auditor` (a11y, performance, SEO, tracking coverage; uses Playwright MCP), `growth-analyst` (post-deploy: funnel per variant, drop-off, CWV, recommendations)
-- **MCP:** Mobbin (UI pattern research), Playwright (browser testing); config in `.mcp.json`
+- **MCP:** Mobbin (UI pattern research), Playwright (browser testing) — config in `.mcp.json`; Vercel (deploy status, build and runtime logs, preview URLs, Web Analytics) — from the `vercel` plugin, not `.mcp.json`
+- Only these three are enabled here. `.claude/settings.json` sets `disableClaudeAiConnectors: true` and pins `enabledMcpjsonServers`, so claude.ai account connectors stay out of this project's context (decision D12).
 
 David logs delegated / corrected / rejected AI work in `docs/ai-log.md`. When he rejects or corrects your output, suggest the log entry.

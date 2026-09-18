@@ -35,7 +35,7 @@ Selection rationale: `research.md` §7. Copy: `messaging.md`.
 - Result screen with a personalized plan (deterministic rules, no LLM)
 - GTM + GA4 (deferred load), UTM capture, server-side `account_created` via GA4 Measurement Protocol
 - Internal `/dashboard`: funnel and conversion per variant, drop-off per step, UTM source
-- Claude Code system: `CLAUDE.md`, skills, agents, MCP (Mobbin, Playwright)
+- Claude Code system: `CLAUDE.md`, skills, agents, MCP (Mobbin, Playwright, Vercel)
 - Deploy on Vercel with preview URLs per branch
 
 **Out of scope (documented, not built)**
