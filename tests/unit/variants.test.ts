@@ -113,16 +113,28 @@ describe('resolveVariant', () => {
 		expect(result.isQa).toBe(true);
 	});
 
-	it('ignores an invalid override instead of flagging it as QA', () => {
-		// A stray ?variant=nonsense carries no intent to force an arm. Treating
-		// it as QA would let a bad link silently shrink the production sample.
+	it('does not honour an invalid override but still flags it as QA', () => {
+		// No arm to switch to, so the cookie stands — but a real visitor does
+		// not append ?variant= to a URL. A typo in a QA link is still someone
+		// testing, and letting it into the readout is the contamination D18
+		// exists to prevent (D45).
 		const result = resolveVariant({
 			cookie: 'money',
 			override: 'nonsense',
 			vercelEnv: 'production',
 		});
 
-		expect(result).toEqual({ variant: 'money', isQa: false, source: 'cookie' });
+		expect(result).toEqual({ variant: 'money', isQa: true, source: 'cookie' });
+	});
+
+	it('flags an invalid override as QA even with no cookie', () => {
+		const result = resolveVariant({
+			override: 'typo',
+			vercelEnv: 'production',
+			random: sequence([0]),
+		});
+		expect(result.isQa).toBe(true);
+		expect(result.source).toBe('assigned');
 	});
 
 	it('flags everything outside production as QA, cookie or not', () => {
@@ -132,6 +144,30 @@ describe('resolveVariant', () => {
 		expect(
 			resolveVariant({ vercelEnv: undefined, random: sequence([0]) }).isQa,
 		).toBe(true);
+	});
+
+	it('keeps a session QA after the ?variant= parameter is gone', () => {
+		// The bug this prevents: force an arm, then reload without the
+		// parameter. The cookie persists, so the arm is right — but the
+		// session used to resolve as production traffic and its conversion
+		// landed in the readout (D46).
+		const forced = resolveVariant({ override: 'time', vercelEnv: 'production' });
+		expect(forced.isQa).toBe(true);
+
+		const laterLoad = resolveVariant({
+			cookie: 'time',
+			vercelEnv: 'production',
+			qaSession: true,
+		});
+		expect(laterLoad.isQa).toBe(true);
+		expect(laterLoad.variant).toBe('time');
+	});
+
+	it('leaves a genuine production session alone', () => {
+		expect(
+			resolveVariant({ cookie: 'money', vercelEnv: 'production', qaSession: false })
+				.isQa,
+		).toBe(false);
 	});
 
 	it('always returns a declared arm', () => {

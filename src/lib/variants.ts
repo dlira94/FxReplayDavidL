@@ -19,6 +19,16 @@ export const VARIANT_COOKIE = 'fxr_variant';
 export const ANONYMOUS_ID_COOKIE = 'fxr_aid';
 /** httpOnly; authorises PATCH on the user it was issued for (docs/api.md). */
 export const EDIT_TOKEN_COOKIE = 'fxr_edit';
+/**
+ * Marks a session as QA for the rest of its life.
+ *
+ * Without it, `?variant=` only flagged the request that carried the parameter:
+ * the arm cookie persisted, so the next load without the parameter resolved as
+ * ordinary production traffic and the QA session's conversion landed in the
+ * readout. Found in the final cleanup — the row was David's own verification
+ * conversion (D46).
+ */
+export const QA_SESSION_COOKIE = 'fxr_qa';
 
 /** Sticky for 30 days, matching the assignment unit in docs/experiment.md. */
 export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
@@ -57,6 +67,8 @@ export interface ResolveVariantInput {
 	cookie?: string | null;
 	/** Value of the `?variant=` query parameter, if present. */
 	override?: string | null;
+	/** Set once a session has ever been flagged QA (`fxr_qa` cookie). */
+	qaSession?: boolean;
 	/** `import.meta.env.VERCEL_ENV` — anything but `production` is QA (D18). */
 	vercelEnv?: string | undefined;
 	random?: () => number;
@@ -79,26 +91,38 @@ export function isNonProductionTraffic(vercelEnv: string | undefined): boolean {
  * then a fresh uniform draw. An override always flags the session as QA so a
  * forced variant can never reach the analysis (CLAUDE.md, experiment integrity).
  *
- * An *invalid* override is ignored rather than honoured or flagged: it carries
- * no intent to force an arm, so treating it as QA would let a stray link
- * silently shrink the sample.
+ * An *invalid* override is not honoured — there is no arm to switch to — but it
+ * **is** still flagged as QA. A real visitor does not append `?variant=` to a
+ * URL; someone testing does, and a typo in a QA link is still a person testing.
+ * Letting a mistyped override land in the readout is the contamination D18
+ * exists to prevent, and it outweighs the sample this costs (D45, reversing an
+ * earlier call that ignored invalid values entirely).
  */
 export function resolveVariant(input: ResolveVariantInput = {}): VariantResolution {
-	const { cookie, override, vercelEnv, random } = input;
+	const { cookie, override, vercelEnv, random, qaSession } = input;
 
-	const environmentIsQa = isNonProductionTraffic(vercelEnv);
+	// QA is sticky: a session that was ever forced stays excluded, even on
+	// later requests that no longer carry the parameter (D46).
+	const environmentIsQa = isNonProductionTraffic(vercelEnv) || qaSession === true;
 
 	if (isVariantId(override)) {
 		return { variant: override, isQa: true, source: 'override' };
 	}
 
+	// Present but unrecognised: no arm to force, but still someone testing.
+	const attemptedOverride = override !== null && override !== undefined;
+
 	if (isVariantId(cookie)) {
-		return { variant: cookie, isQa: environmentIsQa, source: 'cookie' };
+		return {
+			variant: cookie,
+			isQa: environmentIsQa || attemptedOverride,
+			source: 'cookie',
+		};
 	}
 
 	return {
 		variant: assignVariant(random),
-		isQa: environmentIsQa,
+		isQa: environmentIsQa || attemptedOverride,
 		source: 'assigned',
 	};
 }
