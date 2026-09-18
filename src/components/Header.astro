@@ -34,6 +34,9 @@ import Cta from './Cta.astro';
 	.header__logo {
 		display: inline-flex;
 		align-items: center;
+		/* 44px touch target (CLAUDE.md). An inline link wrapping a 24px icon
+		   and a line of text lands around 26px on its own. */
+		min-height: 2.75rem;
 		gap: var(--space-2);
 		color: var(--text-primary);
 		font-family: var(--font-heading);
@@ -42,13 +45,20 @@ import Cta from './Cta.astro';
 	}
 
 	/* The hero CTA is right there on small screens; a second one in the header
-	   would be two competing primary actions in one viewport. */
-	.header__cta {
+	   would be two competing primary actions in one viewport.
+	 *
+	 * :global() is required, not stylistic. Astro scopes styles by adding this
+	 * component's id to elements in *its own* template; the CTA's root <a> is
+	 * rendered by Cta.astro and carries only Cta's id, so a plain .header__cta
+	 * rule compiles to a selector that matches nothing and fails silently.
+	 * Kept under .header__inner > so the escape hatch cannot reach further
+	 * than this header. */
+	.header__inner > :global(.header__cta) {
 		display: none;
 	}
 
 	@media (min-width: 48rem) {
-		.header__cta {
+		.header__inner > :global(.header__cta) {
 			display: inline-flex;
 		}
 	}

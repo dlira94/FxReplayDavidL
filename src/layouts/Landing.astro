@@ -16,7 +16,10 @@ const { title = SHARED_COPY.seo.title, description = SHARED_COPY.seo.description
 
 const site = getSiteUrl();
 const canonical = new URL(Astro.url.pathname, site).href;
-const ogImage = new URL('/brand/FXReplayLogo.svg', site).href;
+// A raster image, not the brand SVG: Facebook, LinkedIn, X and Slack do not
+// render SVG previews, so summary_large_image would come out blank.
+const ogImage = new URL('/og-image.png', site).href;
+const logo = new URL('/brand/FXReplayLogo.svg', site).href;
 const indexable = isIndexable();
 
 /* Organization + SoftwareApplication, per docs. No aggregateRating and no
@@ -30,7 +33,7 @@ const jsonLd = {
 			'@id': `${site}/#organization`,
 			name: 'FX Replay',
 			url: site,
-			logo: ogImage,
+			logo,
 		},
 		{
 			'@type': 'SoftwareApplication',
@@ -67,6 +70,9 @@ const jsonLd = {
 		<meta property="og:description" content={description} />
 		<meta property="og:url" content={canonical} />
 		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="FX Replay" />
 		<meta name="twitter:card" content="summary_large_image" />
 		<meta name="twitter:title" content={title} />
 		<meta name="twitter:description" content={description} />

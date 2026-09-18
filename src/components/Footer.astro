@@ -33,6 +33,9 @@ const year = new Date().getFullYear();
 	.footer__logo {
 		display: inline-flex;
 		align-items: center;
+		/* 44px touch target (CLAUDE.md), which an inline link does not reach
+		   on its own. */
+		min-height: 2.75rem;
 		gap: var(--space-2);
 		justify-self: start;
 		color: var(--text-primary);

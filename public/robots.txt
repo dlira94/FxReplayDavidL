@@ -1,0 +1,8 @@
+# Indexability is decided per environment, not here: preview deployments send
+# `noindex` via src/lib/site.ts. A blanket Disallow in this static file would
+# apply to production too, which is the opposite of what we want.
+#
+# No Sitemap line on purpose: the site is a single on-demand route, so there is
+# no sitemap to point at and a dangling reference is worse than none.
+User-agent: *
+Allow: /

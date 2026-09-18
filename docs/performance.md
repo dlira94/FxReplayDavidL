@@ -44,6 +44,28 @@ first.
    from the CDN. Measuring A's TTFB gives the size of what B would have bought, which is what
    turns "we picked A for time budget" into a number.
 
+### Measured — preview `jpmayivtm`, 2026-09-18
+
+| Metric | Value | Budget |
+|---|---|---|
+| Lighthouse Performance (mobile) | **99** | ≥ 95 ✅ |
+| Accessibility / Best Practices | **100 / 100** | 100 ✅ |
+| SEO | 66 on preview — `is-crawlable` only, because preview is `noindex` by design. Every other SEO audit scores 1, so production reads 100 | 100 (confirm in production) |
+| LCP | **1.7 s** | < 2.0 ✅ |
+| CLS | **0** | < 0.05 ✅ |
+| TBT (INP proxy) | **0 ms** | — ✅ |
+| Application JS | **0 KB** | < 60 KB ✅ |
+
+**The D16 cost, quantified.** `/` answers `private, no-store` with `x-vercel-cache: MISS`
+on every request, as it must. Warm TTFB on `/` (a function) measured 337–359 ms, median
+≈ 350 ms; a CDN hit on `/fonts/*.woff2` from the same client measured ≈ 233 ms.
+
+→ **≈ 117 ms of warm function overhead** is what option B would have bought back. LCP still
+lands at 1.7 s, so the trade-off is affordable at this page weight. This is a **floor, not
+the worst case**: every measurement hit a warm instance, so cold start is not in the number.
+Read p75/p95 TTFB from the Vercel dashboard after an idle period before treating 117 ms as
+the answer.
+
 ### Where the numbers go
 
 - Ad-hoc: `pre-deploy-auditor`, which runs Lighthouse against a production build or a preview
@@ -65,11 +87,21 @@ sync, which is why it was not the first move.
 never be cached by the CDN. A cached `/` would pin every visitor to one arm and destroy the
 experiment — this is a correctness constraint, not a performance tuning knob.
 
-Static assets keep Astro's default hashed-filename immutable caching.
+Static assets should keep hashed-filename immutable caching, but on the `jpmayivtm` preview
+they did not: `/_astro/*`, `/fonts/*` and `/brand/*` all answered
+`cache-control: public, max-age=0, must-revalidate`. The adapter does emit an immutable
+header route in `.vercel/output/config.json`, but it sits *after* `{ "handle": "filesystem" }`,
+so for a file the filesystem already served it never runs. Every repeat visit revalidated the
+CSS and all three fonts.
+
+A root `vercel.json` now sets the headers explicitly. **Unverified**: it has not been through
+a deployment yet, so confirm the response headers on the next preview before believing this
+paragraph.
 
 ## Fonts
 
 Lato (headings) and Nunito Sans (body), self-hosted, **only the weights actually used**,
 `font-display: swap`, preloaded for the weights in the LCP element. Not yet implemented:
-`tokens.css` declares the families but there are no `@font-face` rules or font files, so
-today both fall back to `system-ui`.
+Implemented: Lato 700 and Nunito Sans 400/600, latin subset, 56 KB total, served from
+`/fonts/` with `font-display: swap`. Lato 700 is preloaded as the weight of the LCP element.
+Verified on preview: three woff2 requests, no calls to Google Fonts.

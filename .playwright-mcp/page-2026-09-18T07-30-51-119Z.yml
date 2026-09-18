@@ -1,0 +1,121 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "FX Replay home" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e6]: FX Replay
+      - link "Build my free practice plan" [ref=e7] [cursor=pointer]:
+        - /url: "#plan"
+  - main [ref=e8]:
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - heading "Stop paying the market to learn." [level=1] [ref=e12]
+        - paragraph [ref=e13]: Practice your strategy on real historical markets with zero money at risk. Get a practice plan built around how you trade.
+        - generic [ref=e14]:
+          - link "Build my free practice plan" [ref=e15] [cursor=pointer]:
+            - /url: "#plan"
+          - link "See a sample plan" [ref=e16] [cursor=pointer]:
+            - /url: "#plan-preview"
+        - paragraph [ref=e17]: Free forever plan · No credit card
+      - paragraph [ref=e59]: Replaying EUR/USD · 2019 session
+    - region "Why traders trust FX Replay" [ref=e61]:
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - paragraph [ref=e64]: 1M+
+          - paragraph [ref=e65]: traders
+        - paragraph [ref=e67]: replay real historical markets
+        - paragraph [ref=e69]: journal, analytics and AI mentor built in
+    - region [ref=e70]:
+      - generic [ref=e71]:
+        - heading "Every live mistake has a price." [level=2] [ref=e72]
+        - paragraph [ref=e73]: Testing a new setup with real money turns every lesson into a loss. It makes each trade stressful, and it makes it impossible to tell a bad strategy from bad luck. You deserve a place to make mistakes for free.
+    - region [ref=e74]:
+      - generic [ref=e75]:
+        - generic [ref=e76]:
+          - generic [ref=e77]: Your guide
+          - 'heading "We''ve been there: learning the hard way is expensive." [level=2] [ref=e78]'
+        - list [ref=e79]:
+          - listitem [ref=e80]: Trusted by 1M+ traders
+          - listitem [ref=e82]: replay real historical markets
+          - listitem [ref=e84]: journal, analytics and AI mentor built in
+    - region [ref=e86]:
+      - generic [ref=e87]:
+        - generic [ref=e88]:
+          - generic [ref=e89]: The plan
+          - heading "Here's what you'll get in 2 minutes" [level=2] [ref=e90]
+        - article [ref=e91]:
+          - generic [ref=e92]:
+            - 'heading "{name}''s risk-free practice plan" [level=3] [ref=e93]'
+            - paragraph [ref=e94]: Sample plan · 2–5 h a week · under a year trading
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - term [ref=e97]: Weekly routine
+              - definition [ref=e98]: 3 × 60 min
+            - generic [ref=e99]:
+              - term [ref=e100]: Starting focus
+              - definition [ref=e101]: one setup, log every trade, review weekly
+            - generic [ref=e102]:
+              - term [ref=e103]: Tools to use in FX Replay
+              - definition [ref=e104]: journal + performance analytics
+            - generic [ref=e105]:
+              - term [ref=e106]: Milestone
+              - definition [ref=e107]: After 12 sessions, review your stats
+        - link "Build my free practice plan" [ref=e109] [cursor=pointer]:
+          - /url: "#plan"
+    - region [ref=e110]:
+      - generic [ref=e111]:
+        - generic [ref=e112]:
+          - generic [ref=e113]: How it works
+          - heading "Three steps, about two minutes" [level=2] [ref=e114]
+        - list [ref=e115]:
+          - listitem [ref=e116]:
+            - generic [aria-hidden] [ref=e117]: "1"
+            - generic [ref=e118]: Answer a few quick questions
+          - listitem [ref=e119]:
+            - generic [aria-hidden] [ref=e120]: "2"
+            - generic [ref=e121]: Get your personalized practice plan
+          - listitem [ref=e122]:
+            - generic [aria-hidden] [ref=e123]: "3"
+            - generic [ref=e124]: Start practicing free
+    - region [ref=e125]:
+      - generic [ref=e126]:
+        - heading "Two ways to learn this" [level=2] [ref=e127]
+        - generic [ref=e128]:
+          - article [ref=e129]:
+            - heading "Without FX Replay" [level=3] [ref=e130]
+            - paragraph [ref=e131]:
+              - generic [aria-hidden] [ref=e132]: ✗
+              - text: Learning with real money, guessing, repeating the same mistakes
+          - article [ref=e133]:
+            - heading "With FX Replay" [level=3] [ref=e134]
+            - paragraph [ref=e135]:
+              - generic [aria-hidden] [ref=e136]: ✓
+              - text: Walk into the live market with reps, data and a routine behind every decision
+    - region [ref=e137]:
+      - generic [ref=e138]:
+        - heading "Questions, answered" [level=2] [ref=e139]
+        - generic [ref=e140]:
+          - group [ref=e141]:
+            - generic "Is it really free?" [ref=e142] [cursor=pointer]
+          - group [ref=e145]:
+            - generic "Do I trade real money?" [ref=e146] [cursor=pointer]
+          - group [ref=e149]:
+            - generic "What happens with my email?" [ref=e150] [cursor=pointer]
+          - group [ref=e153]:
+            - generic "I'm a beginner. Is this for me?" [ref=e154] [cursor=pointer]
+    - region [ref=e157]:
+      - generic [ref=e158]:
+        - heading "Let's build your risk-free practice plan." [level=2] [ref=e159]
+        - link "Build my free practice plan" [ref=e161] [cursor=pointer]:
+          - /url: "#plan"
+        - paragraph [ref=e162]: Free forever plan · No credit card
+    - generic [ref=e163]: The quiz opens here.
+  - contentinfo [ref=e164]:
+    - generic [ref=e165]:
+      - link "FX Replay home" [ref=e166] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e167]: FX Replay
+      - paragraph [ref=e168]: FX Replay is an educational practice tool. You practice on historical market data — no real money is involved. Trading live markets carries risk of loss.
+      - paragraph [ref=e169]: © 2026 FX Replay

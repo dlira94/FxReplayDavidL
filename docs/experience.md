@@ -15,7 +15,7 @@ Mobile-first. Dark-first brand (`--bg-primary`). One primary action per screen.
 | 7 | 3-step plan | Answer → Get plan → Practice free | shared |
 | 8 | Success vs failure | Short contrast block | shared |
 | 9 | FAQ | Objection handling (`<details>`) | shared |
-| 10 | Final CTA + footer | Repeat primary CTA | shared |
+| 10 | Final CTA + footer | Repeat primary CTA | shared layout, [variant] title (the section heading is `quizIntro`); CTA label shared |
 
 All CTAs open the quiz. The quiz opens **inline** (replaces the page content area, URL `#plan`) rather than as a modal: better on mobile, simpler focus management, and it survives back-button use.
 
