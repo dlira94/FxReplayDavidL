@@ -11,6 +11,14 @@ Desk research conducted Sep 17, 2026. Sources at the bottom. Pain selection is a
 - **Core features relevant to messaging:** TradingView-style charts, multi-chart / multi-asset sessions, built-in journal, prop firm simulator (custom drawdown / profit-target rules), Mentor AI on simulated sessions, Monte Carlo and R:R analytics, economic calendar context.
 - **Offer structure:** a **Free plan** (no credit card, never expires) plus a **5-day trial of paid plans** (card required). Paid tiers: Intermediate ≈ $17.99/mo, Pro ≈ $35/mo, with regional pricing.
 - **Social proof in market:** "Trusted by 1M+ traders" on the homepage; ~600 Trustpilot reviews.
+
+  **Figures used on the landing** — the social-proof bar shows numbers only, so each one is pinned to where it comes from. Nothing else on the page is allowed to become a number.
+
+  | Figure | Claim | Source |
+  |---|---|---|
+  | `1M+` | traders | FX Replay's own homepage ("Trusted by 1M+ traders") |
+  | `600+` | reviews on Trustpilot | Trustpilot profile, ~600 reviews at time of research. **Re-check before production** — a review count moves, and a stale number is a wrong number |
+  | `$0` | real money at risk | Product fact, not a metric: FX Replay is a replay/simulation platform (§1 Positioning, "zero real money involved"). The only figure here that cannot go out of date |
 - **Positioning:** a *practice room*, not a broker, not an automated strategy engine. Educational framing: zero real money involved.
 
 - **Plan tiers and market access** *(third-party source)*: LuxAlgo's platform overview reports three tiers — Beginner (free; 2 sessions, 50 trades per session, one-week retention), Intermediate (≈$17.99/mo), Pro (≈$35/mo; unlimited sessions and retention) — and states that **"the pricing table reserves seconds data and futures/CME access for Pro."**

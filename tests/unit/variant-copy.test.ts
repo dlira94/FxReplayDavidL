@@ -91,6 +91,15 @@ describe('shared copy mirrors docs/messaging.md', () => {
 	const strings: Array<[string, string]> = [
 		['seo.title', SHARED_COPY.seo.title],
 		['seo.description', SHARED_COPY.seo.description],
+		...SHARED_COPY.testimonials.flatMap((x, i) => [
+			[`testimonials[${i}].attribution`, x.attribution] as [string, string],
+			[`testimonials[${i}].quote`, x.quote] as [string, string],
+		]),
+		...SHARED_COPY.socialProof.flatMap((s) => [
+			[`socialProof.${s.figure}.figure`, s.figure] as [string, string],
+			[`socialProof.${s.figure}.title`, s.title] as [string, string],
+			[`socialProof.${s.figure}.body`, s.body] as [string, string],
+		]),
 		...SHARED_COPY.heroIndicators.map(
 			(i) => [`heroIndicators.${i.pain}`, i.label] as [string, string],
 		),

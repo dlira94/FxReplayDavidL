@@ -22,6 +22,67 @@ export const SHARED_COPY = {
 	},
 
 	/**
+	 * Written examples, not quotes from real people — every card says so on its
+	 * face (decisions.md D27). In production this section is fed from real
+	 * Trustpilot reviews; invented testimonials are never published.
+	 */
+	testimonials: [
+		{
+			attribution: 'Part-time trader, 2 years in',
+			quote:
+				'I was getting four trades a week around my job. Now I get four hundred, and I can tell which setup actually works.',
+		},
+		{
+			attribution: 'Prop challenge candidate',
+			quote:
+				'I blew two evaluations on the same mistake. Replaying it fifty times was cheaper than a third attempt.',
+		},
+		{
+			attribution: 'Beginner, six months in',
+			quote:
+				'I stopped guessing whether my strategy was bad or I was. The journal answered it in a week.',
+		},
+	],
+
+	/** The label every testimonial card carries, visibly. */
+	testimonialLabel: 'Sample testimonial',
+
+	/**
+	 * Three figures, each pinned to a source in research.md §1. A number with no
+	 * source does not go on this bar — that is the whole rule, and it is why the
+	 * other two columns of the old strip were capability labels rather than
+	 * invented metrics.
+	 */
+	socialProof: [
+		{
+			figure: '1M+',
+			countTo: 1_000_000,
+			compact: true,
+			suffix: '+',
+			title: 'traders',
+			body: 'Already practising on FX Replay.',
+		},
+		{
+			figure: '600+',
+			countTo: 600,
+			compact: false,
+			suffix: '+',
+			title: 'reviews on Trustpilot',
+			body: 'Public, and you can read every one.',
+		},
+		{
+			// No counter: counting from zero to zero is theatre, and this is the
+			// one figure that is a product fact rather than a metric.
+			figure: '$0',
+			countTo: null,
+			compact: false,
+			suffix: '',
+			title: 'real money at risk',
+			body: 'Historical data, simulated orders, every session.',
+		},
+	],
+
+	/**
 	 * The hero visual is shared across arms, so it speaks to all three pains at
 	 * once: one indicator each for money, time and discipline. A visual that
 	 * only answered the variant's pain would make the image part of the

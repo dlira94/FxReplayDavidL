@@ -31,6 +31,22 @@ Source of truth for every word on the page. Components read copy from `src/conte
 | Crypto | BTC/USD and ETH/USD; the market runs 24/7, so weekends count too |
 | Indices / other | Your market's main index, at its opening session |
 
+**Social proof bar [shared]** — three figures, each sourced in `research.md` §1. A number with no source does not go on this bar.
+
+| Figure | Title | Body |
+|---|---|---|
+| 1M+ | traders | Already practising on FX Replay. |
+| 600+ | reviews on Trustpilot | Public, and you can read every one. |
+| $0 | real money at risk | Historical data, simulated orders, every session. |
+
+**Testimonials [shared]** — every card carries a visible "Sample testimonial" label. These are written examples of the kind of feedback the product gets, not quotes from real people (`decisions.md` D27).
+
+| Attribution | Quote |
+|---|---|
+| Part-time trader, 2 years in | I was getting four trades a week around my job. Now I get four hundred, and I can tell which setup actually works. |
+| Prop challenge candidate | I blew two evaluations on the same mistake. Replaying it fifty times was cheaper than a third attempt. |
+| Beginner, six months in | I stopped guessing whether my strategy was bad or I was. The journal answered it in a week. |
+
 **Hero visual indicators [shared]** — the hero visual is identical across arms, so it must speak to all three pains at once rather than to the one the variant happens to frame. One indicator per pain:
 
 | Pain | Indicator | Reads as |
