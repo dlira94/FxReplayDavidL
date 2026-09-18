@@ -1,0 +1,146 @@
+import { describe, expect, it } from 'vitest';
+
+import {
+	CONTROL_VARIANT,
+	VARIANT_IDS,
+	assignVariant,
+	isNonProductionTraffic,
+	isVariantId,
+	resolveVariant,
+} from '../../src/lib/variants';
+
+/** Returns each value in turn, so a "random" draw can be asserted exactly. */
+function sequence(values: number[]): () => number {
+	let index = 0;
+	return () => values[index++ % values.length] as number;
+}
+
+describe('isVariantId', () => {
+	it('accepts every declared arm', () => {
+		for (const id of VARIANT_IDS) {
+			expect(isVariantId(id)).toBe(true);
+		}
+	});
+
+	it.each([
+		['unknown string', 'control'],
+		['empty string', ''],
+		['casing mismatch', 'Money'],
+		['whitespace', ' money'],
+	])('rejects %s', (_label, value) => {
+		expect(isVariantId(value)).toBe(false);
+	});
+
+	it.each([undefined, null, 0, {}, []])('rejects the non-string %s', (value) => {
+		expect(isVariantId(value)).toBe(false);
+	});
+});
+
+describe('assignVariant', () => {
+	it('maps each third of the range to one arm', () => {
+		expect(assignVariant(() => 0)).toBe('money');
+		expect(assignVariant(() => 0.34)).toBe('time');
+		expect(assignVariant(() => 0.67)).toBe('discipline');
+	});
+
+	it('clamps a random source that returns 1 instead of indexing past the end', () => {
+		expect(assignVariant(() => 1)).toBe('discipline');
+	});
+
+	it('splits uniformly over many draws', () => {
+		const draws = 30_000;
+		const counts: Record<string, number> = { money: 0, time: 0, discipline: 0 };
+
+		for (let i = 0; i < draws; i++) {
+			const variant = assignVariant();
+			counts[variant] = (counts[variant] ?? 0) + 1;
+		}
+
+		const expected = draws / VARIANT_IDS.length;
+		// ±3 % of the expected share. An assignment that drifts off a third
+		// surfaces as a sample ratio mismatch weeks later and invalidates the
+		// whole readout, so it is worth asserting here.
+		for (const id of VARIANT_IDS) {
+			expect(counts[id]).toBeGreaterThan(expected * 0.97);
+			expect(counts[id]).toBeLessThan(expected * 1.03);
+		}
+	});
+});
+
+describe('isNonProductionTraffic', () => {
+	it('treats production as the only real traffic', () => {
+		expect(isNonProductionTraffic('production')).toBe(false);
+	});
+
+	it.each(['preview', 'development', undefined, ''])(
+		'flags %s as QA',
+		(env) => {
+			expect(isNonProductionTraffic(env)).toBe(true);
+		},
+	);
+});
+
+describe('resolveVariant', () => {
+	it('keeps the arm in the cookie', () => {
+		expect(
+			resolveVariant({ cookie: 'discipline', vercelEnv: 'production' }),
+		).toEqual({ variant: 'discipline', isQa: false, source: 'cookie' });
+	});
+
+	it('assigns a fresh arm when there is no cookie', () => {
+		expect(
+			resolveVariant({
+				vercelEnv: 'production',
+				random: sequence([0.5]),
+			}),
+		).toEqual({ variant: 'time', isQa: false, source: 'assigned' });
+	});
+
+	it('honours ?variant= and flags the session as QA', () => {
+		expect(
+			resolveVariant({ override: 'time', vercelEnv: 'production' }),
+		).toEqual({ variant: 'time', isQa: true, source: 'override' });
+	});
+
+	it('lets the override win over an existing cookie', () => {
+		const result = resolveVariant({
+			cookie: 'money',
+			override: 'discipline',
+			vercelEnv: 'production',
+		});
+
+		expect(result.variant).toBe('discipline');
+		expect(result.isQa).toBe(true);
+	});
+
+	it('ignores an invalid override instead of flagging it as QA', () => {
+		// A stray ?variant=nonsense carries no intent to force an arm. Treating
+		// it as QA would let a bad link silently shrink the production sample.
+		const result = resolveVariant({
+			cookie: 'money',
+			override: 'nonsense',
+			vercelEnv: 'production',
+		});
+
+		expect(result).toEqual({ variant: 'money', isQa: false, source: 'cookie' });
+	});
+
+	it('flags everything outside production as QA, cookie or not', () => {
+		expect(resolveVariant({ cookie: 'money', vercelEnv: 'preview' }).isQa).toBe(
+			true,
+		);
+		expect(
+			resolveVariant({ vercelEnv: undefined, random: sequence([0]) }).isQa,
+		).toBe(true);
+	});
+
+	it('always returns a declared arm', () => {
+		for (let i = 0; i < 200; i++) {
+			expect(VARIANT_IDS).toContain(resolveVariant().variant);
+		}
+	});
+
+	it('names a control that is one of the arms', () => {
+		expect(VARIANT_IDS).toContain(CONTROL_VARIANT);
+	});
+});
