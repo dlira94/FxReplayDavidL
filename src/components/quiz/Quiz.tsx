@@ -96,11 +96,21 @@ export default function Quiz({
 	const [failure, setFailure] = useState<ApiFailure | null>(null);
 	const [emailExists, setEmailExists] = useState(false);
 	const [done, setDone] = useState(false);
-	const [started, setStarted] = useState(false);
 
 	const headingRef = useRef<HTMLHeadingElement>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
 	const restored = useRef(false);
+	/** quiz_start fires once per session, on intent — never on visibility. */
+	const startedQuiz = useRef(false);
+	/** True when the pending selection came from a pointer, not an arrow key. */
+	const pointerSelect = useRef(false);
+	/**
+	 * The step effect focuses the input itself, and a focus we caused is not
+	 * intent. Without this flag `quiz_start` fired the moment the island
+	 * hydrated — the exact bug this change exists to fix, reintroduced one
+	 * line lower.
+	 */
+	const programmaticFocus = useRef(false);
 	/** Steps 2-5 save in the background; a failure is retried, not shown. */
 	const backlog = useRef<Record<string, unknown>>({});
 
@@ -142,18 +152,61 @@ export default function Quiz({
 		headingRef.current?.focus();
 		if (definition.kind !== 'choice') {
 			// A text or email step: put the cursor where the work is.
-			window.setTimeout(() => inputRef.current?.focus(), 60);
+			window.setTimeout(() => {
+				programmaticFocus.current = true;
+				inputRef.current?.focus();
+				// Cleared after the focus event has been dispatched.
+				window.setTimeout(() => {
+					programmaticFocus.current = false;
+				}, 0);
+			}, 60);
 		}
 	}, [step, done, definition.kind]);
 
-	useEffect(() => {
-		if (!started) {
-			setStarted(true);
-			const entry =
-				(document.body.dataset.quizEntry as CtaLocation | undefined) ?? 'hero';
-			track('quiz_start', { entry_cta_location: entry });
+	/**
+	 * `quiz_start` means someone decided to start, not that the section
+	 * scrolled past. The quiz is inline, so firing on mount counted every
+	 * visitor who reached the bottom of the page and inflated the start rate —
+	 * caught in Tag Assistant, where quiz_start arrived *before* cta_click
+	 * with a scroll in between (D42).
+	 *
+	 * Intent is a CTA click, or the first focus or keystroke in the name
+	 * field, whichever comes first. Once per session, so a Back-and-forward
+	 * walk does not count twice.
+	 */
+	const markQuizStart = useCallback((entry?: CtaLocation) => {
+		if (startedQuiz.current) return;
+		try {
+			if (sessionStorage.getItem('fxr_quiz_started')) {
+				startedQuiz.current = true;
+				return;
+			}
+			sessionStorage.setItem('fxr_quiz_started', '1');
+		} catch {
+			/* Storage blocked: the ref still guards this page view. */
 		}
-	}, [started]);
+		startedQuiz.current = true;
+		track('quiz_start', {
+			entry_cta_location:
+				entry ??
+				(document.body.dataset.quizEntry as CtaLocation | undefined) ??
+				'hero',
+		});
+	}, []);
+
+	useEffect(() => {
+		const onCtaClick = (event: Event) => {
+			const target = event.target as HTMLElement | null;
+			const cta = target?.closest?.('[data-cta-location]') as HTMLElement | null;
+			if (!cta) return;
+			const where = cta.dataset.ctaLocation as CtaLocation | undefined;
+			// The transitional CTA scrolls to the plan preview, not the quiz.
+			if (cta.getAttribute('href') !== '#plan') return;
+			markQuizStart(where);
+		};
+		document.addEventListener('click', onCtaClick);
+		return () => document.removeEventListener('click', onCtaClick);
+	}, [markQuizStart]);
 
 	const flushBacklog = useCallback(
 		async (id: string) => {
@@ -231,6 +284,12 @@ export default function Quiz({
 		// userId is not in state yet on this tick, so save it explicitly.
 		writeSaved({ step: 2, answers: { ...answers, firstName: parsed.data }, userId: result.data.user.id });
 		goTo(2, { ...answers, firstName: parsed.data });
+	};
+
+	/** Records a choice without advancing. Arrow keys land here and stop. */
+	const selectChoice = (value: string) => {
+		setFieldError(null);
+		recordAnswer(FIELD_FOR_STEP[definition.name]!, value);
 	};
 
 	/** Steps 2-5: non-blocking. The answer is queued and the quiz moves on. */
@@ -406,13 +465,55 @@ export default function Quiz({
 									checked={
 										answers[FIELD_FOR_STEP[definition.name]!] === option.value
 									}
-									onChange={() => submitChoice(option.value)}
+									// A pointer means "this one, go" — the one-tap
+									// behaviour experience.md §2 asks for on mobile.
+									// An arrow key means "let me look at this one",
+									// and must not submit: moving through options
+									// with the keyboard changing context on every
+									// press is WCAG 3.2.2 (D41).
+									onPointerDown={() => {
+										pointerSelect.current = true;
+									}}
+									onChange={() => {
+										const byPointer = pointerSelect.current;
+										pointerSelect.current = false;
+										if (byPointer) submitChoice(option.value);
+										else selectChoice(option.value);
+									}}
+									onKeyDown={(event: KeyboardEvent) => {
+										if (event.key === 'Enter') {
+											event.preventDefault();
+											submitChoice(option.value);
+										}
+									}}
 									aria-describedby={helper ? helperId : undefined}
 								/>
 								<span>{option.label}</span>
 							</label>
 						))}
 					</div>
+
+					{/* Visible and always available: a keyboard user needs a way
+					    to commit that is not "select an option", and a screen
+					    reader user needs to know one exists. */}
+					<button
+						class="quiz__submit"
+						type="button"
+						onClick={() => {
+							const chosen = answers[FIELD_FOR_STEP[definition.name]!];
+							if (!chosen) {
+								setFieldError('Choose an option to continue.');
+								track('quiz_error', {
+									step_number: step,
+									error_code: 'validation',
+								});
+								return;
+							}
+							submitChoice(chosen);
+						}}
+					>
+						Continue
+					</button>
 				</fieldset>
 			)}
 
@@ -442,7 +543,13 @@ export default function Quiz({
 						}
 						aria-invalid={fieldError ? 'true' : undefined}
 						aria-describedby={fieldError ? errorId : undefined}
-						onInput={() => fieldError && setFieldError(null)}
+						onFocus={() => {
+							if (step === 1 && !programmaticFocus.current) markQuizStart();
+						}}
+						onInput={() => {
+							if (step === 1) markQuizStart();
+							if (fieldError) setFieldError(null);
+						}}
 						disabled={pending}
 					/>
 

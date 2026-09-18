@@ -38,7 +38,8 @@ Visual references: pull quiz / stepper / result patterns via the Mobbin MCP befo
 | 6 | Email + consent line | — | `PATCH` with email → status `converted` |
 
 **Interaction rules**
-- Choice steps advance on selection (one tap); a Back button is always available.
+- Choice steps: **a tap or click selects and advances** (the one-tap behaviour on mobile). **Arrow keys only move the selection** — they never advance — and **Enter, Space or the visible "Continue" button** commits. A Back button is always available.
+  Separating the two is a WCAG 3.2.2 (On Input) requirement, not a preference: in a radio group the arrow keys both move focus and check the option, so advancing on change meant a keyboard user could not read option 3 without submitting option 2 (decision D41).
 - Progress indicator: "Step 2 of 6" plus a bar.
 - Answers are kept client-side; a failed PATCH on steps 2–5 **does not block** progress. It retries in the background and the final PATCH sends the full payload. Only steps 1 and 6 block on the server.
 - Refresh mid-quiz restores progress from `sessionStorage` (user id + answers).
