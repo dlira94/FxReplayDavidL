@@ -49,7 +49,7 @@ Visual references: pull quiz / stepper / result patterns via the Mobbin MCP befo
 | State | Where | Behavior |
 |---|---|---|
 | Idle | every step | CTA disabled until input is valid |
-| Inline validation | name, email | On blur, then on change; message linked via `aria-describedby` |
+| Inline validation | name, email | **On submit, then cleared on change**; message linked via `aria-describedby` and announced with `role="alert"`. Not on blur: complaining about an address someone has not finished thinking about is nagging, and the error is announced at the moment it actually matters |
 | Submitting | steps 1 and 6 | Button shows spinner + "Saving…", inputs disabled, `aria-busy` |
 | Network / 5xx error | any blocking step | Inline alert "We couldn't save that. Check your connection and try again." + Retry; answers preserved |
 | 409 email exists | step 6 | "You already have an FX Replay account with this email." Show the plan anyway + "Log in" link (simulated). Record moves to status `email_exists`; editing the email and resubmitting still converts |

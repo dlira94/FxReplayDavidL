@@ -54,7 +54,7 @@ Delivery is retried with backoff (0.5s, 2s, 6s) inside `waitUntil`, so a transie
 | `plan_view` | Result screen shown | `converted` (bool: false after a 409) |
 | `open_app_click` | "Open FX Replay" on the result | — |
 
-GA4 automatic `page_view` stays on; enhanced-measurement form events are **disabled** (they'd duplicate the quiz events and can capture field names).
+GA4 automatic `page_view` and `scroll` stay on — `scroll` emits `percent_scrolled` and appears alongside the funnel; it carries no PII and collides with nothing, but it is in the property, so it is named here rather than discovered. Enhanced-measurement form events are **disabled** (they'd duplicate the quiz events and can capture field names).
 
 **GA4 setup:** `account_created` marked as a key event; custom dimensions for `variant`, `experiment_id`, `is_qa`, `step_name`, `cta_location`; user property `experiment_variant`; data filter excluding internal traffic; `is_qa = true` excluded in reports.
 
