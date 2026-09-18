@@ -1,11 +1,16 @@
 import type { APIRoute } from 'astro';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 
 import {
 	EDIT_TOKEN_COOKIE,
 	hashEditToken,
 	newEditToken,
 } from '../../../lib/api/edit-token';
+import {
+	ADMIN_SESSION_COOKIE,
+	isAuthorised,
+	unauthorised,
+} from '../../../lib/api/admin';
 import { fail, json, readJson, requestId } from '../../../lib/api/respond';
 import { getDb } from '../../../lib/db';
 import { users } from '../../../lib/db/schema';
@@ -18,6 +23,100 @@ import {
 } from '../../../lib/variants';
 
 export const prerender = false;
+
+/**
+ * `GET /api/users` — admin listing (docs/api.md).
+ *
+ * **This response contains PII.** It is the only surface that does, it needs
+ * the admin token, and the dashboard does not use it — `/api/stats` covers
+ * every number the dashboard and the agent need. Kept because the contract in
+ * api.md specifies it and an operator occasionally needs the records.
+ */
+export const GET: APIRoute = async ({ request, cookies, url }) => {
+	const rid = requestId();
+
+	const cookie = cookies.get(ADMIN_SESSION_COOKIE)?.value;
+	if (!(await isAuthorised(request, cookie))) return unauthorised(rid);
+
+	const status = url.searchParams.get('status');
+	const variant = url.searchParams.get('variant');
+	const limit = Math.min(
+		Math.max(Number(url.searchParams.get('limit') ?? 50) || 50, 1),
+		100,
+	);
+	const cursor = url.searchParams.get('cursor');
+
+	const conditions = [];
+	if (status && ['in_progress', 'converted', 'email_exists'].includes(status)) {
+		conditions.push(eq(users.status, status as never));
+	}
+	if (isVariantId(variant)) conditions.push(eq(users.variant, variant));
+
+	// Cursor on (createdAt, id): stable under concurrent inserts, unlike an
+	// offset, which silently skips or repeats rows as the table grows.
+	if (cursor) {
+		const decoded = decodeCursor(cursor);
+		if (!decoded) return fail('bad_request', 'Invalid cursor.', rid);
+		conditions.push(
+			sql`(${users.createdAt}, ${users.id}) < (${decoded.createdAt}, ${decoded.id})`,
+		);
+	}
+
+	try {
+		const rows = await getDb()
+			.select()
+			.from(users)
+			.where(conditions.length ? and(...conditions) : undefined)
+			.orderBy(desc(users.createdAt), desc(users.id))
+			.limit(limit + 1);
+
+		const page = rows.slice(0, limit);
+		const last = page.at(-1);
+
+		return json(
+			{
+				users: page.map((row) => ({
+					id: row.id,
+					firstName: row.firstName,
+					email: row.email,
+					market: row.market,
+					experience: row.experience,
+					weeklyHours: row.weeklyHours,
+					goal: row.goal,
+					variant: row.variant,
+					status: row.status,
+					lastStep: row.lastStep,
+					isQa: row.isQa,
+					isBot: row.isBot,
+					createdAt: row.createdAt.toISOString(),
+					convertedAt: row.convertedAt?.toISOString() ?? null,
+				})),
+				nextCursor:
+					rows.length > limit && last
+						? encodeCursor(last.createdAt, last.id)
+						: null,
+			},
+			200,
+			rid,
+		);
+	} catch (error) {
+		console.error(`[api] GET /api/users failed, request ${rid}`, error);
+		return fail('internal_error', 'Something went wrong.', rid);
+	}
+};
+
+function encodeCursor(createdAt: Date, id: string): string {
+	return btoa(`${createdAt.toISOString()}|${id}`);
+}
+
+function decodeCursor(value: string): { createdAt: string; id: string } | null {
+	try {
+		const [createdAt, id] = atob(value).split('|');
+		return createdAt && id ? { createdAt, id } : null;
+	} catch {
+		return null;
+	}
+}
 
 /** Public shape. No edit token hash, no internal columns. */
 function publicUser(row: typeof users.$inferSelect) {
@@ -118,6 +217,8 @@ export const POST: APIRoute = async ({ request, cookies, locals }) => {
 				utmCampaign: input.utmCampaign ?? null,
 				utmContent: input.utmContent ?? null,
 				utmTerm: input.utmTerm ?? null,
+				gaClientId: input.gaClientId ?? null,
+				gaSessionId: input.gaSessionId ?? null,
 				editTokenHash: await hashEditToken(token),
 			})
 			.returning();

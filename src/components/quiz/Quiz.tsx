@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { SHARED_COPY } from '../../content/shared';
 import type { VariantCopy } from '../../content/variants';
+import { readGaIdentity } from '../../lib/analytics/ga-cookies';
 import { track } from '../../lib/analytics/track';
 import { initAnalytics } from '../../lib/analytics/track';
 import type { CtaLocation } from '../../lib/analytics/events';
@@ -208,6 +209,10 @@ export default function Quiz({
 			variant,
 			landingPath: window.location.pathname,
 			website: honeypot,
+			// Both can be null here: GTM loads deferred, so a fast visitor
+			// reaches this step before the _ga cookies exist. The server takes
+			// null and the conversion PATCH fills them in (D34).
+			...readGaIdentity(),
 			...utm,
 		});
 		setPending(false);
@@ -269,7 +274,16 @@ export default function Quiz({
 
 		// Anything steps 2-5 could not deliver goes with the conversion, so a
 		// flaky connection mid-quiz cannot cost us the answers.
-		const payload = { ...backlog.current, email: parsed.data, lastStep: 6 };
+		// The conversion is the last chance to attach GA identity before the
+		// server-side account_created needs it.
+		const identity = readGaIdentity();
+		const payload = {
+			...backlog.current,
+			...(identity.gaClientId ? { gaClientId: identity.gaClientId } : {}),
+			...(identity.gaSessionId ? { gaSessionId: identity.gaSessionId } : {}),
+			email: parsed.data,
+			lastStep: 6,
+		};
 		backlog.current = {};
 
 		const result = await updateUser(userId, payload);

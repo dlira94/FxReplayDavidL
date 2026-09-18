@@ -1,0 +1,61 @@
+---
+/**
+ * Google Tag Manager, loaded late on purpose (decision D10).
+ *
+ * GTM is the heaviest third party this page will ever carry, and it has
+ * nothing to do before the visitor sees the page. So the snippet waits for
+ * whichever comes first: the load event, or the first real interaction. LCP
+ * and the pre-interaction JS budget never see it.
+ *
+ * `dataLayer` is created here, ahead of GTM, and `track()` pushes into it from
+ * the moment the island mounts. GTM replays whatever is already in the array
+ * when it initialises, so an event fired before it loaded is not lost — it is
+ * just processed late. That is the whole reason track() never calls gtag
+ * directly.
+ */
+const gtmId = import.meta.env.PUBLIC_GTM_ID ?? process.env.PUBLIC_GTM_ID ?? '';
+---
+
+{
+	gtmId && (
+		<script is:inline define:vars={{ gtmId }}>
+			window.dataLayer = window.dataLayer || [];
+			window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+
+			var loaded = false;
+			function loadGtm() {
+				if (loaded) return;
+				loaded = true;
+				cleanup();
+				var s = document.createElement('script');
+				s.async = true;
+				s.src = 'https://www.googletagmanager.com/gtm.js?id=' + gtmId;
+				document.head.appendChild(s);
+			}
+
+			var INTENT = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
+			function cleanup() {
+				INTENT.forEach(function (e) {
+					window.removeEventListener(e, loadGtm, { capture: true });
+				});
+			}
+			INTENT.forEach(function (e) {
+				window.addEventListener(e, loadGtm, { once: true, capture: true, passive: true });
+			});
+
+			// Whichever comes first: a real interaction, or the page going idle
+			// after load. requestIdleCallback where it exists, a timeout where
+			// it does not, so Safari is not left without analytics.
+			if (document.readyState === 'complete') queueIdle();
+			else window.addEventListener('load', queueIdle, { once: true });
+
+			function queueIdle() {
+				if ('requestIdleCallback' in window) {
+					requestIdleCallback(loadGtm, { timeout: 3000 });
+				} else {
+					setTimeout(loadGtm, 1500);
+				}
+			}
+		</script>
+	)
+}

@@ -79,6 +79,9 @@ export const createUserSchema = z.strictObject({
 		landingPath: z._default(z.string().check(z.maxLength(512)), '/'),
 		/** Honeypot. A real visitor never fills a field they cannot see. */
 		website: z.optional(z.string().check(z.maxLength(0))),
+		/** GA4 identity; null until GTM has loaded (D34). */
+		gaClientId: z.nullish(z.string().check(z.maxLength(64))),
+		gaSessionId: z.nullish(z.string().check(z.maxLength(64))),
 		...utmShape,
 	});
 
@@ -93,6 +96,8 @@ export const updateUserSchema = z.strictObject({
 	goal: z.optional(z.enum(GOALS)),
 	email: z.optional(emailSchema),
 	lastStep: z.optional(z.int().check(z.minimum(1), z.maximum(6))),
+	gaClientId: z.optional(z.string().check(z.maxLength(64))),
+	gaSessionId: z.optional(z.string().check(z.maxLength(64))),
 	website: z.optional(z.string().check(z.maxLength(0))),
 });
 

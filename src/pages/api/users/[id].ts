@@ -9,6 +9,10 @@ import {
 import { fail, json, readJson, requestId } from '../../../lib/api/respond';
 import { getDb } from '../../../lib/db';
 import { users } from '../../../lib/db/schema';
+import {
+	mpConfig,
+	sendAccountCreated,
+} from '../../../lib/analytics/measurement-protocol';
 import { fieldErrors, updateUserSchema } from '../../../lib/schemas';
 
 export const prerender = false;
@@ -34,7 +38,7 @@ function publicUser(row: typeof users.$inferSelect) {
  * email already belongs to a converted user it becomes `email_exists` with a
  * 409, which keeps "already a customer" out of the step-6 abandons (D17).
  */
-export const PATCH: APIRoute = async ({ request, params, cookies }) => {
+export const PATCH: APIRoute = async ({ request, params, cookies, locals }) => {
 	const rid = requestId();
 	const id = params.id;
 
@@ -84,6 +88,9 @@ export const PATCH: APIRoute = async ({ request, params, cookies }) => {
 		if (input.experience) patch.experience = input.experience;
 		if (input.weeklyHours) patch.weeklyHours = input.weeklyHours;
 		if (input.goal) patch.goal = input.goal;
+		// Late-arriving GA identity: written once, never overwritten with null.
+		if (input.gaClientId && !user.gaClientId) patch.gaClientId = input.gaClientId;
+		if (input.gaSessionId) patch.gaSessionId = input.gaSessionId;
 		if (input.lastStep) {
 			// Furthest reached, never backwards: the drop-off report asks how far
 			// someone got, not where they were last.
@@ -131,6 +138,62 @@ export const PATCH: APIRoute = async ({ request, params, cookies }) => {
 			.returning();
 
 		if (!updated) return fail('internal_error', 'Could not save.', rid);
+
+		// The conversion is the only place account_created is sent, and the
+		// status transition happens once, so it cannot fire twice. The stamp
+		// makes that a fact in the database rather than a property of control
+		// flow (D35).
+		if (
+			patch.status === 'converted' &&
+			!updated.accountCreatedSentAt &&
+			!updated.isQa
+		) {
+			const config = mpConfig();
+			if (!config) {
+				console.warn(
+					`[mp] GA4_MEASUREMENT_ID / GA4_API_SECRET not set; skipping account_created for ${updated.id}`,
+				);
+			} else {
+				const deliver = sendAccountCreated(
+					{
+						userId: updated.id,
+						clientId: updated.gaClientId,
+						sessionId: updated.gaSessionId,
+						variant: updated.variant,
+						isQa: updated.isQa,
+						market: updated.market as never,
+						experience: updated.experience as never,
+						weeklyHours: updated.weeklyHours as never,
+						goal: updated.goal as never,
+					},
+					config,
+				)
+					.then(async (result) => {
+						if (result.ok) {
+							await getDb()
+								.update(users)
+								.set({ accountCreatedSentAt: new Date() })
+								.where(eq(users.id, updated.id));
+						} else {
+							// Logged, never thrown: a conversion that GA4 missed
+							// is a reporting gap, and Postgres still has the
+							// signup. Failing the request would lose the signup
+							// to protect the report.
+							console.error(
+								`[mp] account_created not delivered for ${updated.id}:`,
+								result.error ?? result.status,
+							);
+						}
+					})
+					.catch((error: unknown) => {
+						console.error(`[mp] account_created threw for ${updated.id}`, error);
+					});
+
+				// Never blocks the visitor: they get their plan whether or not
+				// Google answers.
+				if (typeof locals.waitUntil === 'function') locals.waitUntil(deliver);
+			}
+		}
 
 		return json({ user: publicUser(updated) }, 200, rid);
 	} catch (error) {

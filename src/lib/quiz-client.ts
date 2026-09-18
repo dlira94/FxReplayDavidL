@@ -83,6 +83,8 @@ export interface CreateUserBody {
 	utmCampaign?: string | null;
 	utmContent?: string | null;
 	utmTerm?: string | null;
+	gaClientId?: string | null;
+	gaSessionId?: string | null;
 }
 
 export function createUser(
