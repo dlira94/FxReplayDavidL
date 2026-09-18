@@ -10,8 +10,9 @@ import { fail, json, readJson, requestId } from '../../../lib/api/respond';
 import { getDb } from '../../../lib/db';
 import { users } from '../../../lib/db/schema';
 import {
+	fallbackClientId,
 	mpConfig,
-	sendAccountCreated,
+	sendAccountCreatedWithRetry,
 } from '../../../lib/analytics/measurement-protocol';
 import { fieldErrors, updateUserSchema } from '../../../lib/schemas';
 
@@ -156,10 +157,14 @@ export const PATCH: APIRoute = async ({ request, params, cookies, locals }) => {
 					`[mp] GA4_MEASUREMENT_ID / GA4_API_SECRET not set; skipping account_created for ${updated.id}`,
 				);
 			} else {
-				const deliver = sendAccountCreated(
+				const deliver = sendAccountCreatedWithRetry(
 					{
 						userId: updated.id,
-						clientId: updated.gaClientId,
+						// Derived from the anonymous id when GTM never ran: the
+						// conversion is counted, attribution is lost. Counting it
+						// wrong beats not counting it (D43).
+						clientId:
+							updated.gaClientId ?? fallbackClientId(updated.anonymousId),
 						sessionId: updated.gaSessionId,
 						variant: updated.variant,
 						isQa: updated.isQa,
@@ -172,6 +177,11 @@ export const PATCH: APIRoute = async ({ request, params, cookies, locals }) => {
 				)
 					.then(async (result) => {
 						if (result.ok) {
+							if (!updated.gaClientId) {
+								console.warn(
+									`[mp] account_created for ${updated.id} used a derived client_id: no GA4 session attribution`,
+								);
+							}
 							await getDb()
 								.update(users)
 								.set({ accountCreatedSentAt: new Date() })
@@ -182,7 +192,7 @@ export const PATCH: APIRoute = async ({ request, params, cookies, locals }) => {
 							// signup. Failing the request would lose the signup
 							// to protect the report.
 							console.error(
-								`[mp] account_created not delivered for ${updated.id}:`,
+								`[mp] account_created not delivered for ${updated.id} after ${result.attempts} attempt(s):`,
 								result.error ?? result.status,
 							);
 						}

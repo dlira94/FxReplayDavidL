@@ -37,11 +37,28 @@ export interface MpResult {
 }
 
 /**
- * A client_id is required by the Measurement Protocol. When GTM has not run
- * yet we have none, and inventing a random one would create a phantom user in
- * GA4 that never matches a browser session — worse than the event being late.
- * The caller decides; this only builds the body.
+ * A client_id is required by the Measurement Protocol, and GTM loads deferred,
+ * so a visitor who converts fast enough can have none.
+ *
+ * A *random* fallback would be wrong — it invents a new GA4 user on every
+ * retry. A fallback *derived from the anonymous id* is stable: the same
+ * visitor always maps to the same client_id, so the conversion is counted once
+ * and stays attached to one user. It loses session attribution, which is the
+ * price of counting the conversion at all (D43).
  */
+export function fallbackClientId(anonymousId: string): string {
+	// GA4 expects `<number>.<number>`. A 32-bit FNV-1a hash of the anonymous id
+	// gives a deterministic first half; the second is fixed so the same visitor
+	// never produces two ids.
+	let hash = 2166136261;
+	for (let i = 0; i < anonymousId.length; i++) {
+		hash ^= anonymousId.charCodeAt(i);
+		hash = Math.imul(hash, 16777619);
+	}
+	return `${hash >>> 0}.1000000000`;
+}
+
+/** Built here so the caller only decides *whether* to send, not *what*. */
 export function buildAccountCreatedBody(payload: AccountCreatedPayload) {
 	const params: Record<string, string | number> = {
 		// Ties the server event to the browser's session so source/medium
@@ -117,6 +134,39 @@ export function sendAccountCreated(
 	config: { measurementId: string; apiSecret: string },
 ): Promise<MpResult> {
 	return send(ENDPOINT, payload, config);
+}
+
+const RETRY_DELAYS_MS = [500, 2_000, 6_000];
+
+/**
+ * Sends, and retries with backoff on a transient failure.
+ *
+ * Runs inside `waitUntil`, so the visitor never waits for any of it. Only
+ * transport failures and 5xx are retried: a 4xx means the payload is wrong and
+ * sending it again more slowly will not fix that.
+ */
+export async function sendAccountCreatedWithRetry(
+	payload: AccountCreatedPayload,
+	config: { measurementId: string; apiSecret: string },
+	sleep: (ms: number) => Promise<void> = (ms) =>
+		new Promise((resolve) => setTimeout(resolve, ms)),
+): Promise<MpResult & { attempts: number }> {
+	let last: MpResult = { ok: false, error: 'not_attempted' };
+
+	for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+		if (attempt > 0) await sleep(RETRY_DELAYS_MS[attempt - 1]!);
+
+		last = await send(ENDPOINT, payload, config);
+		if (last.ok) return { ...last, attempts: attempt + 1 };
+
+		// A bad request stays bad; retrying it only delays the log line.
+		const permanent =
+			last.error === 'missing_client_id' ||
+			(last.status !== undefined && last.status >= 400 && last.status < 500);
+		if (permanent) return { ...last, attempts: attempt + 1 };
+	}
+
+	return { ...last, attempts: RETRY_DELAYS_MS.length + 1 };
 }
 
 /** Same body, GA4's validation endpoint. Used by the integration test. */

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
 	chiSquareUpperTail,
@@ -154,5 +154,77 @@ describe('sampleRatioMismatch', () => {
 		const result = sampleRatioMismatch([500, 250, 250], [0.5, 0.25, 0.25]);
 		expect(result.chiSquare).toBeCloseTo(0, 10);
 		expect(result.status).toBe('ok');
+	});
+});
+
+describe('fallbackClientId', () => {
+	it('is stable for the same visitor', async () => {
+		const { fallbackClientId } = await import(
+			'../../src/lib/analytics/measurement-protocol'
+		);
+		// A random fallback would invent a new GA4 user on every retry, which
+		// is the failure mode this exists to avoid.
+		expect(fallbackClientId('abc-123')).toBe(fallbackClientId('abc-123'));
+	});
+
+	it('differs between visitors and looks like a GA4 client id', async () => {
+		const { fallbackClientId } = await import(
+			'../../src/lib/analytics/measurement-protocol'
+		);
+		expect(fallbackClientId('abc-123')).not.toBe(fallbackClientId('abc-124'));
+		expect(fallbackClientId('abc-123')).toMatch(/^\d+\.\d+$/);
+	});
+});
+
+describe('sendAccountCreatedWithRetry', () => {
+	const config = { measurementId: 'G-TEST', apiSecret: 'secret' };
+	const payload = {
+		userId: 'u', clientId: '1.2', sessionId: 's', variant: 'money' as const,
+		isQa: true, market: null, experience: null, weeklyHours: null, goal: null,
+	};
+
+	it('gives up immediately on a 4xx instead of retrying a bad payload', async () => {
+		const { sendAccountCreatedWithRetry } = await import(
+			'../../src/lib/analytics/measurement-protocol'
+		);
+		const fetchMock = vi.fn().mockResolvedValue(new Response('', { status: 400 }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		const result = await sendAccountCreatedWithRetry(payload, config, async () => {});
+		expect(result.ok).toBe(false);
+		expect(result.attempts).toBe(1);
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		vi.unstubAllGlobals();
+	});
+
+	it('retries a 5xx and stops once it succeeds', async () => {
+		const { sendAccountCreatedWithRetry } = await import(
+			'../../src/lib/analytics/measurement-protocol'
+		);
+		const fetchMock = vi
+			.fn()
+			.mockResolvedValueOnce(new Response('', { status: 503 }))
+			.mockResolvedValueOnce(new Response(null, { status: 204 }));
+		vi.stubGlobal('fetch', fetchMock);
+
+		const result = await sendAccountCreatedWithRetry(payload, config, async () => {});
+		expect(result.ok).toBe(true);
+		expect(result.attempts).toBe(2);
+		vi.unstubAllGlobals();
+	});
+
+	it('does not retry a missing client_id', async () => {
+		const { sendAccountCreatedWithRetry } = await import(
+			'../../src/lib/analytics/measurement-protocol'
+		);
+		const fetchMock = vi.fn();
+		vi.stubGlobal('fetch', fetchMock);
+
+		const result = await sendAccountCreatedWithRetry(
+			{ ...payload, clientId: null }, config, async () => {},
+		);
+		expect(result.error).toBe('missing_client_id');
+		expect(fetchMock).not.toHaveBeenCalled();
+		vi.unstubAllGlobals();
 	});
 });
