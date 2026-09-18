@@ -140,10 +140,15 @@ export default function Quiz({
 		[],
 	);
 
-	const goTo = (next: number) => {
+	const goTo = (next: number, answersNow: Answers = answers) => {
 		setFieldError(null);
 		setFailure(null);
 		setStep(next);
+		// Persisted here and not only in the effect below: useEffect is
+		// deferred, so the new step paints before the effect that saves it runs.
+		// A visitor who closes the tab in that window would come back one step
+		// behind the one they were looking at.
+		writeSaved({ step: next, answers: answersNow, userId });
 	};
 
 	const recordAnswer = (field: string, value: string) => {
@@ -188,7 +193,9 @@ export default function Quiz({
 
 		setUserId(result.data.user.id);
 		track('quiz_step_complete', { step_number: 1, step_name: 'name' });
-		goTo(2);
+		// userId is not in state yet on this tick, so save it explicitly.
+		writeSaved({ step: 2, answers: { ...answers, firstName: parsed.data }, userId: result.data.user.id });
+		goTo(2, { ...answers, firstName: parsed.data });
 	};
 
 	/** Steps 2-5: non-blocking. The answer is queued and the quiz moves on. */
@@ -207,7 +214,7 @@ export default function Quiz({
 			step_name: definition.name,
 			answer: value,
 		});
-		goTo(step + 1);
+		goTo(step + 1, { ...answers, [field]: value });
 	};
 
 	/** Step 6: blocking, and the conversion. */
