@@ -17,7 +17,7 @@ Desk research conducted Sep 17, 2026. Sources at the bottom. Pain selection is a
   | Figure | Claim | Source |
   |---|---|---|
   | `1M+` | traders | FX Replay's own homepage ("Trusted by 1M+ traders") |
-  | `600+` | reviews on Trustpilot | Trustpilot profile, ~600 reviews at time of research. **Re-check before production** — a review count moves, and a stale number is a wrong number |
+  | `600+` | reviews on Trustpilot | Trustpilot profile. **Verified 2026-09-18: still 600+.** A review count moves, so re-check if this sits unshipped for long — a stale number is a wrong number, and this is the only figure on the bar that can go out of date without anyone noticing |
   | `$0` | real money at risk | Product fact, not a metric: FX Replay is a replay/simulation platform (§1 Positioning, "zero real money involved"). The only figure here that cannot go out of date |
 - **Positioning:** a *practice room*, not a broker, not an automated strategy engine. Educational framing: zero real money involved.
 
