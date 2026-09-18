@@ -1,9 +1,18 @@
 ---
-// Holding page. The real landing lands in the next phase: sections from
-// docs/experience.md, copy resolved per variant from src/content/variants/.
-// noindex until then — a scaffold should never be crawled as the real page.
-// Remove the robots meta with the landing.
+// Rendered on demand so the middleware can assign a variant per request
+// (decision D16). Without this the page would be prerendered at build time,
+// where there are no cookies and no request to vary on.
+export const prerender = false;
+
+import { getVariantCopy } from '../content/variants';
+import { CONTROL_VARIANT } from '../lib/variants';
 import '../styles/tokens.css';
+
+// Falls back to the control rather than blanking if the middleware somehow
+// did not run: a wrong arm is recoverable, a broken landing is not.
+const variant = Astro.locals.variant ?? CONTROL_VARIANT;
+const isQa = Astro.locals.isQa ?? true;
+const copy = getVariantCopy(variant);
 ---
 
 <!doctype html>
@@ -11,16 +20,17 @@ import '../styles/tokens.css';
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<!-- Still a scaffold, not the landing. Remove with the real sections. -->
 		<meta name="robots" content="noindex" />
 		<meta name="generator" content={Astro.generator} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" sizes="32x32" />
 		<title>Try FX Replay Free</title>
 	</head>
-	<body>
+	<body data-variant={variant} data-qa={String(isQa)}>
 		<main>
-			<h1>Try FX Replay Free</h1>
-			<p>Landing page in progress.</p>
+			<h1>{copy.hero.headline}</h1>
+			<p>{copy.hero.subheadline}</p>
 		</main>
 	</body>
 </html>
@@ -33,7 +43,7 @@ import '../styles/tokens.css';
 		min-height: 100dvh;
 		display: grid;
 		place-content: center;
-		gap: 0.5rem;
+		gap: 0.75rem;
 		padding: 1.5rem;
 		background: var(--bg-primary);
 		color: var(--text-primary);
@@ -41,14 +51,20 @@ import '../styles/tokens.css';
 		text-align: center;
 	}
 
+	main {
+		max-width: 38rem;
+	}
+
 	h1 {
-		margin: 0;
+		margin: 0 0 0.75rem;
 		font-family: var(--font-heading);
 		font-size: 1.75rem;
+		line-height: 1.2;
 	}
 
 	p {
 		margin: 0;
 		color: var(--text-secondary);
+		line-height: 1.6;
 	}
 </style>
