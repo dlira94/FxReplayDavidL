@@ -1,0 +1,109 @@
+---
+import { SHARED_COPY } from '../content/shared';
+---
+
+<!-- The contrast carries the argument, so it never rests on colour alone: each
+     panel is labelled and each list marker has a shape as well as a hue. -->
+<section class="section" aria-labelledby="outcome-title">
+	<div class="container">
+		<h2 id="outcome-title" class="section-title outcome__title">
+			Two ways to learn this
+		</h2>
+
+		<div class="outcome">
+			<article class="outcome__panel outcome__panel--without">
+				<h3 class="outcome__label">Without FX Replay</h3>
+				<p class="outcome__text">
+					<span class="outcome__marker" aria-hidden="true">✗</span>
+					{SHARED_COPY.outcome.failure}
+				</p>
+			</article>
+
+			<article class="outcome__panel outcome__panel--with">
+				<h3 class="outcome__label">With FX Replay</h3>
+				<p class="outcome__text">
+					<span class="outcome__marker" aria-hidden="true">✓</span>
+					{SHARED_COPY.outcome.success}
+				</p>
+			</article>
+		</div>
+	</div>
+</section>
+
+<style>
+	.outcome__title {
+		text-align: center;
+		margin-bottom: var(--space-7);
+	}
+
+	.outcome {
+		display: grid;
+		gap: var(--space-4);
+	}
+
+	.outcome__panel {
+		padding: var(--space-5);
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--border-primary);
+	}
+
+	/* The "before" stays neutral on purpose: the villain never wears the brand. */
+	.outcome__panel--without {
+		background: var(--bg-secondary);
+		color: var(--text-secondary);
+	}
+
+	/* The "after" is where FX Replay enters the story (D24). */
+	.outcome__panel--with {
+		background: var(--card-bg-secondary);
+		border-color: var(--border-brand);
+		background-image: radial-gradient(
+			120% 100% at 0% 0%,
+			var(--brand-wash-faint),
+			transparent 65%
+		);
+	}
+
+	.outcome__label {
+		font-size: var(--text-sm);
+		font-weight: var(--weight-emphasis);
+		text-transform: uppercase;
+		letter-spacing: var(--tracking-eyebrow);
+		color: var(--text-secondary);
+	}
+
+	.outcome__panel--with .outcome__label {
+		color: var(--text-link);
+	}
+
+	.outcome__text {
+		display: flex;
+		gap: var(--space-3);
+		margin-top: var(--space-4);
+		font-size: var(--text-lg);
+	}
+
+	.outcome__panel--with .outcome__text {
+		color: var(--text-primary);
+	}
+
+	.outcome__marker {
+		flex-shrink: 0;
+		font-weight: var(--weight-emphasis);
+	}
+
+	.outcome__panel--without .outcome__marker {
+		color: var(--text-disabled);
+	}
+
+	.outcome__panel--with .outcome__marker {
+		color: var(--text-success);
+	}
+
+	@media (min-width: 48rem) {
+		.outcome {
+			grid-template-columns: 1fr 1fr;
+			gap: var(--space-5);
+		}
+	}
+</style>

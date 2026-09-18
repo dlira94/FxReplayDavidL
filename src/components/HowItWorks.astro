@@ -1,0 +1,105 @@
+---
+import { SHARED_COPY } from '../content/shared';
+---
+
+<!-- The plan the guide gives you: numbers and connector in brand blue (D24). -->
+<section class="section section--band" aria-labelledby="steps-title">
+	<div class="container container--narrow">
+		<div class="steps__head">
+			<span class="eyebrow">How it works</span>
+			<h2 id="steps-title" class="section-title">Three steps, about two minutes</h2>
+		</div>
+
+		<ol class="steps">
+			{
+				SHARED_COPY.steps.map((step, index) => (
+					<li class="steps__item">
+						<span class="steps__number" aria-hidden="true">
+							{index + 1}
+						</span>
+						<span class="steps__text">{step}</span>
+					</li>
+				))
+			}
+		</ol>
+	</div>
+</section>
+
+<style>
+	.steps__head {
+		text-align: center;
+		margin-bottom: var(--space-7);
+	}
+
+	.steps {
+		display: grid;
+		gap: var(--space-6);
+		counter-reset: step;
+	}
+
+	.steps__item {
+		position: relative;
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-4);
+	}
+
+	.steps__number {
+		display: grid;
+		place-items: center;
+		flex-shrink: 0;
+		width: 2.25rem;
+		height: 2.25rem;
+		border: 1px solid var(--border-brand);
+		border-radius: var(--radius-full);
+		background: var(--bg-primary);
+		color: var(--text-link);
+		font-family: var(--font-heading);
+		font-weight: var(--weight-heading);
+		font-size: var(--text-sm);
+	}
+
+	/* The connector is what makes three items read as one process. */
+	.steps__item:not(:last-child)::before {
+		content: '';
+		position: absolute;
+		left: 1.125rem;
+		top: 2.25rem;
+		width: 1px;
+		height: calc(100% + var(--space-6) - 2.25rem);
+		background: linear-gradient(
+			to bottom,
+			var(--border-brand),
+			transparent
+		);
+	}
+
+	.steps__text {
+		padding-top: 0.4rem;
+		font-size: var(--text-lg);
+	}
+
+	@media (min-width: 48rem) {
+		.steps {
+			grid-template-columns: repeat(3, 1fr);
+			gap: var(--space-5);
+		}
+
+		.steps__item {
+			flex-direction: column;
+			gap: var(--space-4);
+		}
+
+		.steps__item:not(:last-child)::before {
+			left: 2.25rem;
+			top: 1.125rem;
+			width: calc(100% - 2.25rem + var(--space-5));
+			height: 1px;
+			background: linear-gradient(to right, var(--border-brand), transparent);
+		}
+
+		.steps__text {
+			padding-top: 0;
+		}
+	}
+</style>
