@@ -66,18 +66,76 @@ const {
 		}
 	}
 
-	/* Brand blue marks the call to action: where the guide asks you to act (D24). */
+	/* Brand blue marks the call to action: where the guide asks you to act (D24).
+	 *
+	 * The border is a conic gradient of the brand blues that travels around the
+	 * edge once on load and once more on hover or focus. Never a loop: a button
+	 * that shimmers forever stops reading as "press me" and starts reading as
+	 * decoration, which is the one thing D24 rules out.
+	 *
+	 * Built with padding-box/border-box rather than a pseudo-element, so there
+	 * is no extra box to mask and nothing to mis-stack. --cta-angle is a
+	 * registered property; browsers without @property simply get the static
+	 * gradient, which still looks intentional. */
 	.cta--primary {
-		background: var(--btn-bg-primary-active);
+		background:
+			linear-gradient(
+					var(--btn-bg-primary-active),
+					var(--btn-bg-primary-active)
+				)
+				padding-box,
+			conic-gradient(
+					from var(--cta-angle),
+					var(--blue-800) 0deg 200deg,
+					var(--blue-300) 290deg,
+					var(--blue-400) 360deg
+				)
+				border-box;
+		border: 1.5px solid transparent;
 		color: var(--btn-text);
 	}
 
 	.cta--primary:hover {
-		background: var(--btn-bg-primary-hover);
+		background:
+			linear-gradient(var(--btn-bg-primary-hover), var(--btn-bg-primary-hover))
+				padding-box,
+			conic-gradient(
+					from var(--cta-angle),
+					var(--blue-800) 0deg 200deg,
+					var(--blue-300) 290deg,
+					var(--blue-400) 360deg
+				)
+				border-box;
 	}
 
 	.cta--primary:active {
-		background: var(--btn-bg-primary-pressed);
+		background:
+			linear-gradient(
+					var(--btn-bg-primary-pressed),
+					var(--btn-bg-primary-pressed)
+				)
+				padding-box,
+			conic-gradient(var(--blue-800), var(--blue-800)) border-box;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.cta--primary {
+			animation: cta-sweep 1400ms ease-out 400ms 1;
+		}
+
+		.cta--primary:hover,
+		.cta--primary:focus-visible {
+			animation: cta-sweep 900ms ease-out 1;
+		}
+	}
+
+	@keyframes cta-sweep {
+		from {
+			--cta-angle: 0deg;
+		}
+		to {
+			--cta-angle: 360deg;
+		}
 	}
 
 	.cta--transitional {
