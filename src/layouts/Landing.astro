@@ -81,7 +81,12 @@ const jsonLd = {
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" sizes="32x32" />
 
-		{/* The H1 is the LCP element, so its weight is the only font preloaded. */}
+		{/* Lato 700 is the only preloaded weight. Measured 2026-09-18: the LCP
+		    element is actually p.hero__sub (Nunito Sans 400), not the h1 — the
+		    hero visual pushed it into the largest-paint slot. Preloading it too
+		    was considered and rejected: under font-display: swap the LCP paints
+		    with the fallback either way, and a second preload competes with the
+		    first for the same early bandwidth. */}
 		<link
 			rel="preload"
 			href="/fonts/lato-latin-700-normal.woff2"

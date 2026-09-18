@@ -44,18 +44,19 @@ first.
    from the CDN. Measuring A's TTFB gives the size of what B would have bought, which is what
    turns "we picked A for time budget" into a number.
 
-### Measured — preview `q0l88ugm2`, 2026-09-18 (3 Lighthouse runs)
+### Measured — preview `e3yi11pms`, 2026-09-18 (3 Lighthouse runs)
 
 | Metric | Value | Budget |
 |---|---|---|
-| Lighthouse Performance (mobile) | **99–100** (100, 99, 99) | ≥ 95 ✅ |
+| Lighthouse Performance (mobile) | **99–100** (99, 100, 100) | ≥ 95 ✅ |
 | Accessibility / Best Practices | **100 / 100** (3/3 runs) | 100 ✅ |
 | SEO | 69 on preview — `is-crawlable` is the *only* failing audit, because preview is `noindex` by design. Every other SEO audit passes, so production reads 100 | 100 (confirm in production) |
-| LCP | **1.3 / 1.7 / 1.7 s** | < 2.0 ✅ |
+| LCP | **1.7 / 1.5 / 1.5 s** | < 2.0 ✅ |
 | CLS | **0** (3/3 runs) | < 0.05 ✅ |
 | TBT (INP proxy) | **0 ms** (3/3 runs) | < 200 ✅ |
-| Application JS | **0 bytes, 0 script requests** | < 60 KB ✅ |
-| Total page weight | 62 KiB (doc 20.6 + CSS 19.3 + 3 fonts 50.9 + SVG/favicon 1.8) | — |
+| Application JS | **2,489 B raw · 982 B gzip · 0 script requests** | < 5 KB ✅ |
+| LCP element | `p.hero__sub`, 6 of 6 loads — **not** the `h1`, since the hero visual arrived | — |
+| Total page weight | 67 KiB, 10 requests (doc 32.0 raw / 7.9 transferred, 2 CSS, 3 woff2, 1 SVG) | — |
 
 **The D16 cost, quantified.** `/` answers `private, no-store` with `x-vercel-cache: MISS`
 on every request, as it must — a shared cache would pin every visitor to one arm.
@@ -64,8 +65,8 @@ Two numbers, and they measure different things:
 
 | | Value | What it is |
 |---|---|---|
-| Lighthouse `server-response-time` | **70 ms** | server work on the root document |
-| curl TTFB, 12 warm samples | min 317 · **median 343** · p90 350 · max 403 ms | end-to-end from a distant client to `sfo1`, network RTT included |
+| Lighthouse `server-response-time` | **63 ms** (62 / 63 / 71) | server work on the root document |
+| curl TTFB, 20 warm samples | min 310 · p25 334 · **median 352** · p75 361 · p90 368 · max 397 ms | end-to-end from a distant client to `sfo1`, network RTT included |
 
 Quote **70 ms as server time** and 343 ms as end-to-end from far away. The earlier "≈117 ms
 of function overhead vs a CDN hit" came from comparing curl-to-curl on the same client and
@@ -114,5 +115,11 @@ changed it — `/favicon.svg`, which no rule covers, still returns the adapter d
 Lato (headings) and Nunito Sans (body), self-hosted, **only the weights actually used**,
 `font-display: swap`, preloaded for the weights in the LCP element. Not yet implemented:
 Implemented: Lato 700 and Nunito Sans 400/600, latin subset, 56 KB total, served from
-`/fonts/` with `font-display: swap`. Lato 700 is preloaded as the weight of the LCP element.
-Verified on preview: three woff2 requests, no calls to Google Fonts.
+`/fonts/` with `font-display: swap`. Verified on preview: three woff2 requests, no calls to
+Google Fonts.
+
+**Lato 700 is the only preloaded weight, and it is no longer the LCP font.** Since the hero
+visual landed, the LCP element measures as `p.hero__sub` (Nunito Sans 400) in 6 of 6 loads.
+Preloading a second weight was rejected rather than overlooked: under `font-display: swap`
+the LCP paints with the fallback regardless, and a second preload competes for the same early
+bandwidth. Revisit only if LCP starts missing the budget.
