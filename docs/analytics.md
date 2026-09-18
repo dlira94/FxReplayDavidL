@@ -69,7 +69,7 @@ Drop-off per step comes from `users.last_step` in Postgres, which also catches u
 
 A 409 is not an account creation: the user already had one. It's reported as its own outcome (`signup_email_exists`), not counted as a conversion.
 
-Those records stay `in_progress` at `last_step = 6` (`api.md`), which looks identical to an abandon in the `last_step` drop-off. Subtract `signup_email_exists` from step-6 drop-off before reading it as friction, and report the 409 rate separately as a guardrail.
+Those records carry status **`email_exists`** (`api.md`), so the dashboard excludes them from the step-6 drop-off instead of counting them as abandons. They are reported as their own line — "already had an account" — next to the 409 rate guardrail. They stay in the denominator of the primary metric: they were exposed and they didn't create an account.
 
 ## 6. Data quality
 
@@ -86,7 +86,7 @@ Those records stay `in_progress` at `last_step = 6` (`api.md`), which looks iden
 
 Admin-token protected, server-rendered from Postgres:
 - Conversion per variant with 95 % CI, and delta vs control
-- Funnel per variant (start → step 1…5 → converted)
+- Funnel per variant (start → step 1…5 → converted), with `email_exists` broken out so drop-off isn't inflated
 - Drop-off by `last_step`
 - Conversions by `utm_source` / `utm_campaign`
 - SRM check status
