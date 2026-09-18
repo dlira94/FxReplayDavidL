@@ -207,6 +207,34 @@ const jsonLd = {
 					counters.forEach(function (el) { counter.observe(el); });
 				}
 
+				// ── plan_preview_view ── the section that shows the value before
+				// asking for anything, so "did they actually see it" is a real
+				// question. Once per session, at half visible: a section that
+				// merely clipped the viewport was not read.
+				var preview = document.querySelector('#plan-preview');
+				if (preview && 'IntersectionObserver' in window) {
+					var seen = false;
+					try { seen = !!sessionStorage.getItem('fxr_preview_seen'); } catch (e) {}
+					if (!seen) {
+						var previewObserver = new IntersectionObserver(
+							function (entries) {
+								if (!entries[0].isIntersecting) return;
+								previewObserver.disconnect();
+								try { sessionStorage.setItem('fxr_preview_seen', '1'); } catch (e) {}
+								dl.push({
+									event: 'plan_preview_view',
+									variant: root.dataset.variant || '',
+									experiment_id: 'try_free_pain_v1',
+									is_qa: root.dataset.qa === 'true',
+									page_path: location.pathname
+								});
+							},
+							{ threshold: 0.5 }
+						);
+						previewObserver.observe(preview);
+					}
+				}
+
 				// ── CTA clicks ── one delegated listener rather than a handler per
 				// button, so a CTA added later is tracked without remembering to.
 				document.addEventListener('click', function (e) {

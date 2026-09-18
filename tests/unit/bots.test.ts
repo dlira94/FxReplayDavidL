@@ -15,6 +15,10 @@ const AUTOMATION = [
 	'curl/8.4.0',
 	'python-requests/2.32.3',
 	'facebookexternalhit/1.1',
+	'curl/8.4.0',
+	'wget/1.21.4',
+	'node-fetch/3.3.2',
+	'Go-http-client/2.0',
 	'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
 ];
 

@@ -42,7 +42,7 @@ first.
    copy result, it is a delivery difference, and it invalidates the comparison.
 3. **The gap vs option B.** B (three prerendered pages + an edge rewrite) would serve HTML
    from the CDN. Measuring A's TTFB gives the size of what B would have bought, which is what
-   turns "we picked A for time budget" into a number.
+   turns "we picked A and deferred B" into a number.
 
 ### Measured — preview `e3yi11pms`, 2026-09-18 (3 Lighthouse runs)
 
@@ -76,54 +76,75 @@ LCP lands at 1.3–1.7 s, so the trade-off is affordable at this page weight. St
 not the worst case**: every sample hit a warm instance. Read p75/p95 from the Vercel
 dashboard after an idle period before treating any of this as the ceiling.
 
-### Measured — **production**, 2026-09-18
+### Measured — **production**, 2026-09-18 · the final record
 
-The preview numbers below were always caveated with "SEO should read 100 in production,
-but that is inference from the code path". Measured, it does.
+Lighthouse 13.4.1, mobile, simulated throttling, 3 runs, median reported.
 
-| Metric | Production | Preview `e3yi11pms` |
+| Metric | Production | Budget |
 |---|---|---|
-| Performance | **100** | 99–100 |
-| Accessibility | **100** | 100 |
-| Best Practices | **100** | 100 |
-| **SEO** | **100 — zero failing audits** | 69 (`is-crawlable` only, by design) |
-| LCP | **1.1 s** | 1.5–1.7 s |
-| CLS | **0** | 0 |
-| TBT | **0 ms** | 0 ms |
-| FCP | 1.0 s | — |
-| `server-response-time` | **70 ms** | 63 ms |
+| Performance | **99** | ≥ 95 ✅ |
+| Accessibility | **100** | 100 ✅ |
+| Best Practices | **100** | 100 ✅ |
+| **SEO** | **100 — zero failing audits** | 100 ✅ |
+| LCP | **1.26 s** | < 2.0 s ✅ |
+| CLS | **0** | < 0.05 ✅ |
+| TBT (INP proxy) | **100 ms** | < 200 ms ✅ |
+| FCP / Speed Index | 1.11 s / 2.60 s | — |
+| **JS before interaction** | **4.15 KB gzip**, 0 external script requests | < 60 KB ✅ (7%) |
+| **JS on opening the quiz** | **21.8 KB gzip** / 23.3 KB brotli, 4 chunks | < 25 KB ✅ |
+| Page weight · requests | **357 KiB · 11** (72 KiB · 9 without GTM) | — |
 
-Production is faster than preview on LCP, which is expected: the preview injects Vercel's
-toolbar and the production deployment is not carrying it.
+LCP element is `p.hero__sub`, not the `h1` — the hero visual pushed it into the
+largest-paint slot. See the fonts section below for why the preload was left
+alone.
 
-Indexability confirmed at the same time: **no `x-robots-tag` header, no `<meta name="robots">`**,
-canonical is **self-referential** (`https://fxreplaydavidlira.vercel.app/` served at that
-URL), `og:image` resolves 200 — the 404 the previous audit flagged self-resolved on merge, as
-predicted — `robots.txt` 200, and `/lab/hero-visual` answers **404**, so the internal review
-page really is absent from production.
+**TTFB — three numbers, because they measure different things:**
 
-### What GTM actually costs, and what Lighthouse shows
-
-Measured on preview `mdf4vvife`, after load:
-
-| Resource | Wire (brotli) | Uncompressed |
+| Source | Value | What it is |
 |---|---|---|
-| `gtm.js` | 124 KB | 367 KB |
-| `gtag/js` (GA4 config, pulled in *by* `gtm.js` ~1.15 s later) | 161 KB | 484 KB |
-| **Total** | **~284 KB** | ~850 KB |
+| Lighthouse `server-response-time` | **87 ms** | server work on the root document |
+| Browser `navigation.responseStart` | 69 ms | the same, from a real navigation |
+| curl, 20 warm samples | min 284 · **median 296** · p90 326 ms | end-to-end from a distant client, network included |
 
-Main thread: 68 ms, of which 12 ms blocking.
+Quote **~87 ms server** and **~296 ms end-to-end warm**. Every sample hit a warm
+function, so both are a floor. `/` answers `private, no-store` with
+`x-vercel-cache: MISS` on every request, as D16 requires.
 
-**Lighthouse does not show all of this, and the 99 should not be read as if it
-did.** Its byte-weight delta with GTM blocked was 118 KB — that is `gtm.js`
-alone. `gtag/js` arrives after Lighthouse stops measuring, so roughly half the
-real post-load payload is outside the score.
+> **These numbers replace an earlier production row that read 100 / 1.1 s /
+> 0 ms.** That row was captured before GTM was live on the deployment, so it was
+> measuring a page that no longer exists. The difference is entirely GTM, and it
+> is quantified below rather than averaged away.
 
-It does not touch LCP or TBT — LCP measured 1,655 ms with GTM and 1,874 ms with
-it blocked — because it loads after the page is interactive (D10). But "it does
-not affect the score" and "it is free" are different claims, and only the first
-one is true. Written down here so the trade-off is a decision on record rather
-than a number nobody looked for.
+### What GTM costs, isolated
+
+Measured by re-running Lighthouse with `googletagmanager.com` and
+`google-analytics.com` blocked, and diffing.
+
+| | As shipped | GTM blocked | **GTM's cost** |
+|---|---|---|---|
+| Performance | 99 | 100 | **−1 point** |
+| TBT | 100 ms | 0 ms | **+100 ms — all of the page's blocking time** |
+| Speed Index | 2.60 s | 1.59 s | **+1.00 s** |
+| LCP | 1.26 s | 1.49 s | **none** — GTM does not delay LCP |
+| CLS | 0 | 0 | none |
+| Page weight | 357 KiB | 72 KiB | **+285 KiB** |
+
+Per file: `gtm.js` 127 KB, `gtag/js` 164 KB, plus GA `collect` beacons.
+**GTM is 80% of the page's weight and 100% of its blocking time.**
+
+This is the cost of the measurement layer, accepted deliberately (D10): it loads
+after the page is interactive, so it buys reporting without touching LCP. But
+"it does not hurt the score" and "it is free" are different claims and only the
+first is true — the honest figure is on the record so nobody has to rediscover
+it.
+
+**One precision about D10.** GTM loads on whichever comes first: a real
+interaction, or `requestIdleCallback` after the `load` event with a 3 s timeout.
+The idle path exists so a visitor who never interacts still gets measured, and
+so Safari — which lacks `requestIdleCallback` — is not left without analytics.
+So every visit pays the 285 KiB, just never on the critical path. Anywhere this
+project says GTM loads "on intent", read it as "on intent or once the page is
+idle, whichever is first".
 
 ### Where the numbers go
 

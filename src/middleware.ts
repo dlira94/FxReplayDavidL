@@ -5,6 +5,7 @@ import { recordExposure } from './lib/db/exposures';
 import {
 	ANONYMOUS_ID_COOKIE,
 	COOKIE_MAX_AGE_SECONDS,
+	QA_SESSION_COOKIE,
 	VARIANT_COOKIE,
 	resolveVariant,
 } from './lib/variants';
@@ -35,6 +36,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		cookie: cookies.get(VARIANT_COOKIE)?.value,
 		override: url.searchParams.get('variant'),
 		vercelEnv: process.env.VERCEL_ENV,
+		qaSession: cookies.get(QA_SESSION_COOKIE)?.value === '1',
 	});
 
 	const anonymousId =
@@ -59,6 +61,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
 	cookies.set(VARIANT_COOKIE, resolution.variant, cookieOptions);
 	cookies.set(ANONYMOUS_ID_COOKIE, anonymousId, cookieOptions);
+	// Written once and never cleared: a QA session stays QA for its whole life,
+	// including the requests that no longer carry ?variant= (D46).
+	if (resolution.isQa) cookies.set(QA_SESSION_COOKIE, '1', cookieOptions);
 
 	const response = await next();
 

@@ -51,7 +51,7 @@ Astro · TypeScript (strict) · React island for the quiz · Zod · Drizzle + Ne
 ## Constraints
 
 - **Zero cost:** free tiers only.
-- **Time box:** ~6 hours; over-runs are logged in `decisions.md`.
+- **Time box:** ~6 hours.
 - **Brand:** semantic tokens from `brand/tokens.css` only; never raw hex.
 - **Copy:** no profit promises (see `research.md` §5).
 - **No PII in analytics:** name and email live only in the database.
