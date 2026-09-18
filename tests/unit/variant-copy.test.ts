@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { SHARED_COPY } from '../../src/content/shared';
 import { VARIANT_COPY } from '../../src/content/variants';
 import type { VariantCopy } from '../../src/content/variants/types';
 import { VARIANT_IDS } from '../../src/lib/variants';
@@ -78,5 +79,45 @@ describe('variant copy mirrors docs/messaging.md', () => {
 		expect(VARIANT_COPY.time.result.lead).toContain('{hours}');
 		expect(VARIANT_COPY.money.result.lead).not.toContain('{');
 		expect(VARIANT_COPY.discipline.result.lead).not.toContain('{');
+	});
+});
+
+/**
+ * Shared copy is the *constant* of the experiment. An accidental edit here
+ * changes all three arms at once, which does not look like a bug in any single
+ * variant — it just quietly redefines what is being compared.
+ */
+describe('shared copy mirrors docs/messaging.md', () => {
+	const strings: Array<[string, string]> = [
+		['seo.title', SHARED_COPY.seo.title],
+		['seo.description', SHARED_COPY.seo.description],
+		['primaryCta', SHARED_COPY.primaryCta],
+		['transitionalCta', SHARED_COPY.transitionalCta],
+		['trustLine', SHARED_COPY.trustLine],
+		['guide.empathy', SHARED_COPY.guide.empathy],
+		...SHARED_COPY.guide.authority.map(
+			(value, i) => [`guide.authority[${i}]`, value] as [string, string],
+		),
+		['planPreview.title', SHARED_COPY.planPreview.title],
+		...SHARED_COPY.steps.map(
+			(value, i) => [`steps[${i}]`, value] as [string, string],
+		),
+		['outcome.success', SHARED_COPY.outcome.success],
+		['outcome.failure', SHARED_COPY.outcome.failure],
+		...SHARED_COPY.faq.flatMap((entry, i) => [
+			[`faq[${i}].question`, entry.question] as [string, string],
+			[`faq[${i}].answer`, entry.answer] as [string, string],
+		]),
+		['footerDisclaimer', SHARED_COPY.footerDisclaimer],
+	];
+
+	it.each(strings)('%s appears verbatim in the doc', (_slot, value) => {
+		expect(MESSAGING.includes(value)).toBe(true);
+	});
+
+	it('uses one primary CTA label for every arm', () => {
+		// The experiment isolates the pain framing. A CTA that differed per
+		// variant would make the result unattributable.
+		expect(MESSAGING).toContain(SHARED_COPY.primaryCta);
 	});
 });
