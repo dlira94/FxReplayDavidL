@@ -120,10 +120,16 @@ describe('decide', () => {
 describe('maskEmail', () => {
 	it.each([
 		['david@example.com', 'd****@example.com'],
-		['a@b.com', 'a*@b.com'],
-		['long.address.here@sub.domain.co', 'l****************@sub.domain.co'],
+		['a@b.com', 'a****@b.com'],
+		['long.address.here@sub.domain.co', 'l****@sub.domain.co'],
 	])('masks %s', (input_, expected) => {
 		expect(maskEmail(input_)).toBe(expected);
+	});
+
+	it('uses a fixed number of asterisks, so length is not leaked', () => {
+		const short = maskEmail('ab@x.com');
+		const long = maskEmail('a-very-long-local-part@x.com');
+		expect(short.split('@')[0]!.length).toBe(long.split('@')[0]!.length);
 	});
 
 	it('keeps the domain, which is the part that is useful', () => {

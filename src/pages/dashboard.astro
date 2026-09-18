@@ -24,6 +24,10 @@ import '../styles/global.css';
  * cannot be replayed against the API (D36).
  */
 
+// Cookie-authenticated and holding masked customer data: `public` would be
+// wrong even with must-revalidate, and the API routes already use no-store.
+Astro.response.headers.set('cache-control', 'private, no-store');
+
 let error: string | null = null;
 let stats: StatsResponse | null = null;
 let decisions = new Map<string, Decision>();
@@ -245,7 +249,7 @@ const STEP_LABELS: Record<string, string> = {
 										<header class="decision__head">
 											<h3 class="decision__variant">
 												{v.variant}
-												{v.variant === stats!.control && <span class="tag">control</span>}
+												{v.variant === stats!.control && <> <span class="tag">control</span></>}
 											</h3>
 											<span class:list={['badge', `badge--${d.status}`]}>
 												{DECISION_LABEL[d.status]}
@@ -297,7 +301,7 @@ const STEP_LABELS: Record<string, string> = {
 										<tr>
 											<th scope="row">
 												{v.variant}
-												{v.variant === stats!.control && <span class="tag">control</span>}
+												{v.variant === stats!.control && <> <span class="tag">control</span></>}
 											</th>
 											<td>{v.exposures.toLocaleString('en')}</td>
 											<td>{v.quizStarts.toLocaleString('en')}</td>
@@ -360,7 +364,7 @@ const STEP_LABELS: Record<string, string> = {
 												<td>{u.createdAt.replace('T', ' ').slice(0, 16)}</td>
 												<th scope="row">
 													{u.maskedEmail}
-													{u.isQa && <span class="tag">qa</span>}
+													{u.isQa && <> <span class="tag">qa</span></>}
 												</th>
 												<td>{u.variant}</td>
 												<td>{u.status}</td>

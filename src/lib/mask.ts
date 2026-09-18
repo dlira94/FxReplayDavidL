@@ -13,7 +13,9 @@ export function maskEmail(email: string | null): string {
 
 	const local = email.slice(0, at);
 	const domain = email.slice(at + 1);
-	// One character is enough to recognise your own address in a support
-	// conversation and not enough to reconstruct someone else's.
-	return `${local[0]}${'*'.repeat(Math.max(local.length - 1, 1))}@${domain}`;
+	// Fixed width, not `local.length - 1`: a variable run of asterisks leaks
+	// how long the address is, which is a little more than nothing about a
+	// person. One leading character is enough to recognise your own address in
+	// a support conversation and not enough to reconstruct someone else's.
+	return `${local[0]}****@${domain}`;
 }

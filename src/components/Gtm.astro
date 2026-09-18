@@ -33,15 +33,27 @@ const gtmId = import.meta.env.PUBLIC_GTM_ID ?? process.env.PUBLIC_GTM_ID ?? '';
 				document.head.appendChild(s);
 			}
 
-			var INTENT = ['pointerdown', 'keydown', 'touchstart', 'scroll'];
+			// Pointer and key events are captured so a click on any element
+			// counts as intent. `scroll` deliberately is NOT: it does not
+			// bubble, but a capture-phase window listener still sees scrolls
+			// from every descendant — and the testimonials rail
+			// (overflow-x: auto, scroll-snap) emits one at layout with no user
+			// input at all. That was loading GTM before first contentful paint
+			// on mobile, which is exactly what D10 exists to prevent. Below
+			// 48rem the rail scrolls; above it does not, so the bug was
+			// invisible on desktop.
+			var INTENT = ['pointerdown', 'keydown', 'touchstart'];
 			function cleanup() {
 				INTENT.forEach(function (e) {
 					window.removeEventListener(e, loadGtm, { capture: true });
 				});
+				// removeEventListener must match the capture flag it was added with.
+				window.removeEventListener('scroll', loadGtm);
 			}
 			INTENT.forEach(function (e) {
 				window.addEventListener(e, loadGtm, { once: true, capture: true, passive: true });
 			});
+			window.addEventListener('scroll', loadGtm, { once: true, passive: true });
 
 			// Whichever comes first: a real interaction, or the page going idle
 			// after load. requestIdleCallback where it exists, a timeout where
