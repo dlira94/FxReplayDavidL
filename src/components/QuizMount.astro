@@ -1,0 +1,42 @@
+---
+import Quiz from './quiz/Quiz';
+import type { VariantCopy } from '../content/variants';
+import type { VariantId } from '../lib/variants';
+
+interface Props {
+	variant: VariantId;
+	copy: VariantCopy;
+	isQa: boolean;
+	anonymousId: string;
+	utm: Record<string, string | null>;
+}
+
+const { variant, copy, isQa, anonymousId, utm } = Astro.props;
+---
+
+<!--
+  Where every CTA lands. `client:visible` and not `client:load`: the island's
+  JavaScript is only fetched once this section is actually on screen, so a
+  visitor who reads the page and leaves never pays for it (D29).
+
+  The CTAs scroll here, which makes them the intent signal.
+-->
+<section class="section quiz-section" id="plan" aria-labelledby="quiz-section-title">
+	<div class="container container--narrow">
+		<h2 id="quiz-section-title" class="visually-hidden">Build your practice plan</h2>
+		<Quiz
+			client:visible
+			variant={variant}
+			copy={copy}
+			isQa={isQa}
+			anonymousId={anonymousId}
+			utm={utm}
+		/>
+	</div>
+</section>
+
+<style>
+	.quiz-section {
+		scroll-margin-top: 5rem;
+	}
+</style>

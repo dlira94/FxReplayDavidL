@@ -13,17 +13,17 @@
     "db:generate": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "node --env-file-if-exists=.env.local node_modules/drizzle-kit/bin.cjs migrate",
     "test": "vitest run --passWithNoTests",
+    "test:integration": "node --env-file-if-exists=.env.local node_modules/.bin/vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test --pass-with-no-tests",
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/react": "^6.0.6",
+    "@astrojs/preact": "^6.0.5",
     "@astrojs/vercel": "^11.0.10",
     "@neondatabase/serverless": "^1.1.0",
     "astro": "^7.3.3",
     "drizzle-orm": "^0.45.2",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "preact": "^10.29.8",
     "zod": "^4.6.5"
   },
   "allowScripts": {
@@ -35,8 +35,6 @@
     "@fontsource/nunito-sans": "^5.3.0",
     "@playwright/test": "^1.63.0",
     "@types/node": "^22.20.3",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
     "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.3",
     "vitest": "^5.0.1"

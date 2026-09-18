@@ -103,6 +103,10 @@ describe('shared copy mirrors docs/messaging.md', () => {
 		...SHARED_COPY.heroIndicators.map(
 			(i) => [`heroIndicators.${i.pain}`, i.label] as [string, string],
 		),
+		['consentLine', SHARED_COPY.consentLine],
+		['result.openApp', SHARED_COPY.result.openApp],
+		['result.emailExistsHeading', SHARED_COPY.result.emailExistsHeading],
+		['result.logIn', SHARED_COPY.result.logIn],
 		['primaryCta', SHARED_COPY.primaryCta],
 		['transitionalCta', SHARED_COPY.transitionalCta],
 		['trustLine', SHARED_COPY.trustLine],

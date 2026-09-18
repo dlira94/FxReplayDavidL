@@ -1,7 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 
-import react from '@astrojs/react';
+import preact from '@astrojs/preact';
 import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
@@ -19,8 +19,11 @@ export default defineConfig({
     imageService: true,
   }),
 
-  // React is only for the quiz island. Every other component is .astro.
-  integrations: [react()],
+  // Preact for the quiz island; every other component is .astro and ships no
+  // JavaScript at all. `compat: true` aliases react/react-dom to preact/compat,
+  // so the island is written as ordinary React and imports from 'react' —
+  // moving back to React later is a config change, not a rewrite (D29).
+  integrations: [preact({ compat: true })],
 
   build: {
     // Inline small stylesheets, keep big ones as separate cacheable files.

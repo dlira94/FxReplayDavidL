@@ -13,6 +13,7 @@ import Hero from '../components/Hero.astro';
 import HowItWorks from '../components/HowItWorks.astro';
 import Outcome from '../components/Outcome.astro';
 import PlanPreview from '../components/PlanPreview.astro';
+import QuizMount from '../components/QuizMount.astro';
 import Problem from '../components/Problem.astro';
 import SocialProof from '../components/SocialProof.astro';
 import Testimonials from '../components/Testimonials.astro';
@@ -25,9 +26,20 @@ import { CONTROL_VARIANT } from '../lib/variants';
 const variant = Astro.locals.variant ?? CONTROL_VARIANT;
 const isQa = Astro.locals.isQa ?? true;
 const copy = getVariantCopy(variant);
+
+// First-touch UTMs, read from the URL the visitor landed on. The middleware
+// already stored them with the exposure; these ride along with the signup.
+const params = Astro.url.searchParams;
+const utm = {
+	utmSource: params.get('utm_source'),
+	utmMedium: params.get('utm_medium'),
+	utmCampaign: params.get('utm_campaign'),
+	utmContent: params.get('utm_content'),
+	utmTerm: params.get('utm_term'),
+};
 ---
 
-<Landing>
+<Landing variant={variant} isQa={isQa}>
 	<Header />
 
 	<main id="main" data-variant={variant} data-qa={String(isQa)}>
@@ -43,10 +55,13 @@ const copy = getVariantCopy(variant);
 		<Faq />
 		<FinalCta copy={copy} />
 
-		{/* Where the quiz mounts in block 3. Every CTA points here. */}
-		<div id="plan" class="visually-hidden" tabindex="-1">
-			The quiz opens here.
-		</div>
+		<QuizMount
+			variant={variant}
+			copy={copy}
+			isQa={isQa}
+			anonymousId={Astro.locals.anonymousId ?? ''}
+			utm={utm}
+		/>
 	</main>
 
 	<Footer />

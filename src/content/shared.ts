@@ -94,6 +94,17 @@ export const SHARED_COPY = {
 		{ pain: 'discipline', label: 'Rules followed: 47/50' },
 	],
 
+	consentLine:
+		"By continuing you'll create a free FX Replay account. No credit card. We won't share your email.",
+
+	/** The result screen's own actions. Both simulated — see brief.md. */
+	result: {
+		openApp: 'Open FX Replay',
+		emailExistsHeading:
+			'You already have an FX Replay account with this email.',
+		logIn: 'Log in',
+	},
+
 	/** Identical across arms on purpose: the test isolates the pain framing. */
 	primaryCta: 'Build my free practice plan',
 	transitionalCta: 'See a sample plan',
