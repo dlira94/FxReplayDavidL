@@ -22,6 +22,49 @@ Source of truth for every word on the page. Components read copy from `src/conte
 **Plan preview section title:** "Here's what you'll get in 2 minutes"
 **Trust line under CTA:** "Free forever plan · No credit card"
 
+**Where to practice [shared]** — one line per answer to quiz question 2. Shared across variants: the plan logic is identical between arms, only the framing differs (`experiment.md`).
+
+| Market | Line |
+|---|---|
+| Forex | EUR/USD and GBP/USD, during the London–New York overlap |
+| Futures | ES and NQ at the New York open (futures data requires a paid plan; practice the same setup on an index meanwhile) |
+| Crypto | BTC/USD and ETH/USD; the market runs 24/7, so weekends count too |
+| Indices / other | Your market's main index, at its opening session |
+
+**Social proof bar [shared]** — three figures, each sourced in `research.md` §1. A number with no source does not go on this bar.
+
+| Figure | Title | Body |
+|---|---|---|
+| 1M+ | traders | Already practising on FX Replay. |
+| 600+ | reviews on Trustpilot | Public, and you can read every one. |
+| $0 | real money at risk | Historical data, simulated orders, every session. |
+
+**Testimonials [shared]** — every card carries a visible "Sample testimonial" label. These are written examples of the kind of feedback the product gets, not quotes from real people (`decisions.md` D27).
+
+| Attribution | Quote |
+|---|---|
+| Part-time trader, 2 years in | I was getting four trades a week around my job. Now I get four hundred, and I can tell which setup actually works. |
+| Prop challenge candidate | I blew two evaluations on the same mistake. Replaying it fifty times was cheaper than a third attempt. |
+| Beginner, six months in | I stopped guessing whether my strategy was bad or I was. The journal answered it in a week. |
+
+**Hero visual indicators [shared]** — the hero visual is identical across arms, so it must speak to all three pains at once rather than to the one the variant happens to frame. One indicator per pain:
+
+| Pain | Indicator | Reads as |
+|---|---|---|
+| money | `$0 at risk` | nothing to lose while you learn |
+| time | `3 months replayed in 2 hours` | screen time without the calendar |
+| discipline | `Rules followed: 47/50` | execution you can actually measure |
+
+The trade drawn on the chart is a *simulated* one — entry, stop and target — which is the product doing the thing the copy promises.
+
+**SEO [shared]** — identical across arms on purpose: a title that varied by variant would give search engines whichever arm the crawler happened to be assigned.
+- Title: "Try FX Replay Free — Practice trading on real historical markets"
+- Meta description: "Practice on real historical markets with no money at risk. Answer a few quick questions and get a personalized practice plan. Free forever plan, no credit card."
+
+**Footer disclaimer [shared]:** "FX Replay is an educational practice tool. You practice on historical market data — no real money is involved. Trading live markets carries risk of loss."
+
+Stated plainly, once, in the footer: it is an honest description of what the product is, not a warning bolted on. Rendered at `--text-sm` in `--text-secondary`; never styled as an alert.
+
 **FAQ (shared)**
 - *Is it really free?* Yes. The free plan needs no credit card and doesn't expire.
 - *Do I trade real money?* No. You practice on real historical market data; no money is involved.

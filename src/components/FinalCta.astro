@@ -1,0 +1,37 @@
+---
+import type { VariantCopy } from '../content/variants';
+import { SHARED_COPY } from '../content/shared';
+import Cta from './Cta.astro';
+
+interface Props {
+	copy: VariantCopy;
+}
+
+const { copy } = Astro.props;
+---
+
+<section class="section final" aria-labelledby="final-title">
+	<div class="container container--narrow final__inner">
+		<h2 id="final-title" class="section-title reveal">{copy.quizIntro}</h2>
+		<div class="final__action">
+			<Cta label={SHARED_COPY.primaryCta} location="final" />
+		</div>
+		<p class="final__trust">{SHARED_COPY.trustLine}</p>
+	</div>
+</section>
+
+<style>
+	.final__inner {
+		text-align: center;
+	}
+
+	.final__action {
+		margin-top: var(--space-6);
+	}
+
+	.final__trust {
+		margin-top: var(--space-4);
+		color: var(--text-secondary);
+		font-size: var(--text-sm);
+	}
+</style>

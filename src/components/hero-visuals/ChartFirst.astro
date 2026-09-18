@@ -1,0 +1,56 @@
+---
+/**
+ * Option A — "Chart first".
+ *
+ * The chart fills the frame; the trade is drawn as zones (risk below entry,
+ * reward above) so the risk/reward shape is legible before any label is read.
+ * Indicators float over the corners.
+ */
+import { SHARED_COPY } from '../../content/shared';
+import {
+	BODY_W, CANDLES, GHOSTS, PLAYHEAD_X, TRADE, bodyRect, isUp,
+} from './session';
+
+const [money, time, discipline] = SHARED_COPY.heroIndicators;
+---
+
+<figure class="v" aria-hidden="true">
+	<svg class="v__svg" viewBox="0 0 300 140" fill="none" focusable="false">
+		<rect x={TRADE.fromX} y={TRADE.target} width={300 - TRADE.fromX} height={TRADE.entry - TRADE.target} fill="var(--success)" opacity="0.10" />
+		<rect x={TRADE.fromX} y={TRADE.entry} width={300 - TRADE.fromX} height={TRADE.stop - TRADE.entry} fill="var(--error)" opacity="0.12" />
+
+		{CANDLES.map((c) => { const { y, height } = bodyRect(c); const s = isUp(c) ? 'var(--success)' : 'var(--error)';
+			return <g><line x1={c.x} y1={c.h} x2={c.x} y2={c.l} stroke={s} stroke-width="1.5" /><rect x={c.x - BODY_W / 2} y={y} width={BODY_W} height={height} rx="1.5" fill={s} /></g>; })}
+
+		{GHOSTS.map((c) => { const { y, height } = bodyRect(c);
+			return <g opacity="0.45"><line x1={c.x} y1={c.h} x2={c.x} y2={c.l} stroke="var(--dark-400)" stroke-width="1.5" /><rect x={c.x - BODY_W / 2} y={y} width={BODY_W} height={height} rx="1.5" fill="none" stroke="var(--dark-400)" stroke-width="1.5" /></g>; })}
+
+		<line x1={TRADE.fromX} y1={TRADE.entry} x2="300" y2={TRADE.entry} stroke="var(--border-brand)" stroke-width="1.5" stroke-dasharray="4 3" />
+		<line x1={TRADE.fromX} y1={TRADE.stop} x2="300" y2={TRADE.stop} stroke="var(--error)" stroke-width="1.5" stroke-dasharray="3 3" />
+		<line x1={TRADE.fromX} y1={TRADE.target} x2="300" y2={TRADE.target} stroke="var(--success)" stroke-width="1.5" stroke-dasharray="3 3" />
+
+		<g class="v__play"><line x1={PLAYHEAD_X} y1="6" x2={PLAYHEAD_X} y2="134" stroke="var(--border-brand)" stroke-width="2" /><rect x={PLAYHEAD_X - 5} y="2" width="10" height="10" rx="3" fill="var(--border-brand)" /></g>
+
+		<g font-size="7" font-family="var(--font-body)">
+			<text x="296" y={TRADE.target - 3} text-anchor="end" fill="var(--success)">TARGET</text>
+			<text x="296" y={TRADE.entry - 3} text-anchor="end" fill="var(--text-link)">ENTRY</text>
+			<text x="296" y={TRADE.stop + 9} text-anchor="end" fill="var(--error-light)">STOP</text>
+		</g>
+	</svg>
+
+	<p class="v__chip v__chip--a">{money.label}</p>
+	<p class="v__chip v__chip--b">{time.label}</p>
+	<p class="v__chip v__chip--c">{discipline.label}</p>
+</figure>
+
+<style>
+	.v { position: relative; margin: 0; padding: var(--space-5) var(--space-4); background: var(--card-bg-secondary); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); background-image: radial-gradient(120% 80% at 70% 0%, var(--brand-wash-faint), transparent 70%); }
+	.v__svg { width: 100%; height: auto; }
+	.v__chip { position: absolute; margin: 0; padding: var(--space-1) var(--space-3); background: var(--bg-primary); border: 1px solid var(--border-secondary); border-radius: var(--radius-full); color: var(--text-primary); font-size: var(--text-sm); font-weight: var(--weight-emphasis); white-space: nowrap; }
+	.v__chip--a { top: var(--space-3); left: var(--space-4); border-color: var(--border-brand); }
+	.v__chip--b { bottom: var(--space-6); left: var(--space-4); }
+	.v__chip--c { bottom: var(--space-3); right: var(--space-4); }
+	@media (max-width: 30rem) { .v__chip { font-size: 0.75rem; padding-inline: var(--space-2); } }
+	@media (prefers-reduced-motion: no-preference) { .v__play { animation: sweep 2.2s ease-out 0.3s both; } }
+	@keyframes sweep { from { transform: translateX(-70px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>

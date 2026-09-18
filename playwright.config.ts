@@ -22,7 +22,13 @@ export default defineConfig({
 	},
 
 	projects: [
-		{ name: 'mobile-chrome', use: { ...devices['Pixel 7'] } },
+		{
+			name: 'mobile-chrome',
+			// channel: 'chrome' drives the Chrome already on the machine instead
+			// of Playwright's own download, which this environment cannot fetch.
+			// CI installs the bundled browser instead — see PLAYWRIGHT_CHANNEL.
+			use: { ...devices['Pixel 7'], channel: process.env.PLAYWRIGHT_CHANNEL ?? 'chrome' },
+		},
 	],
 
 	// No `webServer`: Astro 7's dev server detaches and the foreground process

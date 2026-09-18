@@ -1,0 +1,125 @@
+---
+import type { VariantCopy } from '../content/variants';
+import { SAMPLE_PLAN, SHARED_COPY } from '../content/shared';
+import Cta from './Cta.astro';
+import IconTrendUp from './icons/IconTrendUp.astro';
+
+interface Props {
+	copy: VariantCopy;
+}
+
+const { copy } = Astro.props;
+---
+
+<!-- Shows the value before asking for anything: the plan is the thing being
+     offered, so it is the one card that carries the brand border (D24). -->
+<section class="section" id="plan-preview" aria-labelledby="plan-preview-title">
+	<div class="container container--narrow">
+		<div class="preview__head reveal">
+			<IconTrendUp />
+			<span class="eyebrow">The plan</span>
+			<h2 id="plan-preview-title" class="section-title">
+				{SHARED_COPY.planPreview.title}
+			</h2>
+		</div>
+
+		<article class="preview__card reveal" data-reveal="120">
+			<header class="preview__card-head">
+				<h3 class="preview__card-title">{copy.result.title}</h3>
+				<p class="preview__caption">{SAMPLE_PLAN.caption}</p>
+			</header>
+
+			<dl class="preview__rows">
+				{
+					SAMPLE_PLAN.rows.map((row) => (
+						<div class="preview__row">
+							<dt class="preview__label">{row.label}</dt>
+							<dd class="preview__value">{row.value}</dd>
+						</div>
+					))
+				}
+			</dl>
+		</article>
+
+		<div class="preview__action">
+			<Cta label={SHARED_COPY.primaryCta} location="plan_preview" />
+		</div>
+	</div>
+</section>
+
+<style>
+	.preview__head {
+		text-align: center;
+		margin-bottom: var(--space-6);
+	}
+
+	.preview__head :global(.icon) {
+		margin: 0 auto var(--space-3);
+	}
+
+	.preview__card {
+		padding: var(--space-5);
+		background: var(--card-bg-secondary);
+		border: 1px solid var(--border-brand);
+		border-radius: var(--radius-lg);
+		background-image: radial-gradient(
+			100% 100% at 50% 0%,
+			var(--brand-wash-faint),
+			transparent 60%
+		);
+	}
+
+	.preview__card-head {
+		padding-bottom: var(--space-4);
+		border-bottom: 1px solid var(--border-secondary);
+	}
+
+	.preview__card-title {
+		font-size: var(--text-xl);
+		line-height: var(--leading-snug);
+	}
+
+	.preview__caption {
+		margin-top: var(--space-2);
+		color: var(--text-secondary);
+		font-size: var(--text-sm);
+	}
+
+	.preview__rows {
+		display: grid;
+		gap: var(--space-4);
+		margin-top: var(--space-4);
+	}
+
+	.preview__row {
+		display: grid;
+		gap: var(--space-1);
+	}
+
+	.preview__label {
+		color: var(--text-secondary);
+		font-size: var(--text-sm);
+	}
+
+	.preview__value {
+		margin: 0;
+		font-weight: var(--weight-emphasis);
+	}
+
+	.preview__action {
+		margin-top: var(--space-6);
+		text-align: center;
+	}
+
+	@media (min-width: 40rem) {
+		.preview__card {
+			padding: var(--space-6);
+		}
+
+		.preview__row {
+			grid-template-columns: 14rem 1fr;
+			gap: var(--space-4);
+			align-items: baseline;
+		}
+	}
+</style>

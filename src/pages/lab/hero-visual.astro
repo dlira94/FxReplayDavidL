@@ -1,0 +1,171 @@
+---
+// Internal review page for choosing the hero visual. Not part of the product.
+//
+// It is rendered on demand so it can answer 404 in production: deleting it
+// before merge would work too, but a route that refuses to exist in production
+// cannot be forgotten about, and the options stay reviewable on every preview
+// until the decision is made.
+export const prerender = false;
+
+import AppPanel from '../../components/hero-visuals/AppPanel.astro';
+import ChartFirst from '../../components/hero-visuals/ChartFirst.astro';
+import SplitMetrics from '../../components/hero-visuals/SplitMetrics.astro';
+import '../../styles/tokens.css';
+import '../../styles/scale.css';
+import '../../styles/global.css';
+
+if (process.env.VERCEL_ENV === 'production') {
+	return new Response('Not found', { status: 404 });
+}
+
+const options = [
+	{
+		id: 'A',
+		name: 'Chart first',
+		note: 'Chart fills the frame. Risk and reward drawn as zones, so the R:R shape reads before any label. Indicators float over the corners.',
+		Component: ChartFirst,
+	},
+	{
+		id: 'B',
+		name: 'App panel',
+		note: 'Framed as the product: instrument, date and transport controls in a title bar, indicators docked as a stats row. Reads as a screenshot without being one.',
+		Component: AppPanel,
+	},
+	{
+		id: 'C',
+		name: 'Split metrics',
+		note: 'Chart and evidence side by side. The one option where the numbers are read as numbers rather than as chips.',
+		Component: SplitMetrics,
+	},
+];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Lab — hero visual options</title>
+	</head>
+	<body>
+		<div class="lab container">
+			<header class="lab__head">
+				<h1>Hero visual — three options</h1>
+				<p>
+					Real tokens, real background. Each option is shown at desktop width
+					and at 390&nbsp;px. All three share the same session data, so they
+					differ in presentation only. Internal page: 404 in production.
+				</p>
+			</header>
+
+			{
+				options.map(({ id, name, note, Component }) => (
+					<section class="lab__option">
+						<h2>
+							<span class="lab__id">{id}</span> {name}
+						</h2>
+						<p class="lab__note">{note}</p>
+
+						<div class="lab__views">
+							<div class="lab__view">
+								<p class="lab__label">Desktop — as it sits in the hero column</p>
+								<div class="lab__desktop">
+									<Component />
+								</div>
+							</div>
+							<div class="lab__view">
+								<p class="lab__label">Mobile — 390 px</p>
+								<div class="lab__mobile">
+									<Component />
+								</div>
+							</div>
+						</div>
+					</section>
+				))
+			}
+		</div>
+	</body>
+</html>
+
+<style>
+	.lab {
+		padding-block: var(--space-7);
+	}
+
+	.lab__head {
+		max-width: 44rem;
+		margin-bottom: var(--space-8);
+	}
+
+	.lab__head h1 {
+		font-size: var(--text-2xl);
+	}
+
+	.lab__head p {
+		margin-top: var(--space-4);
+		color: var(--text-secondary);
+	}
+
+	.lab__option {
+		padding-top: var(--space-7);
+		border-top: 1px solid var(--border-primary);
+	}
+
+	.lab__option + .lab__option {
+		margin-top: var(--space-7);
+	}
+
+	.lab__option h2 {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		font-size: var(--text-xl);
+	}
+
+	.lab__id {
+		display: grid;
+		place-items: center;
+		width: 2rem;
+		height: 2rem;
+		border: 1px solid var(--border-brand);
+		border-radius: var(--radius-full);
+		color: var(--text-link);
+		font-size: var(--text-sm);
+	}
+
+	.lab__note {
+		max-width: 44rem;
+		margin-top: var(--space-3);
+		color: var(--text-secondary);
+	}
+
+	.lab__views {
+		display: grid;
+		gap: var(--space-6);
+		margin-top: var(--space-5);
+	}
+
+	.lab__label {
+		margin-bottom: var(--space-2);
+		color: var(--text-disabled);
+		font-size: var(--text-sm);
+	}
+
+	/* 468px is the width the hero's right column actually gets at 1280px. */
+	.lab__desktop {
+		max-width: 468px;
+	}
+
+	.lab__mobile {
+		max-width: 358px; /* 390px viewport minus the 16px gutters */
+	}
+
+	@media (min-width: 60rem) {
+		.lab__views {
+			grid-template-columns: 468px 358px;
+			gap: var(--space-7);
+			align-items: start;
+		}
+	}
+</style>

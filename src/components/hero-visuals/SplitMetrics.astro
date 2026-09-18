@@ -1,0 +1,68 @@
+---
+/**
+ * Option C — "Split metrics".
+ *
+ * Chart and evidence side by side: the trade on the left, the three
+ * indicators as a stacked column of labelled metrics on the right. The one
+ * option where the numbers are read as numbers rather than as chips.
+ */
+import { SHARED_COPY } from '../../content/shared';
+import {
+	BODY_W, CANDLES, GHOSTS, PLAYHEAD_X, TRADE, bodyRect, isUp,
+} from './session';
+
+// Split each indicator into the figure and the words around it, so the number
+// can carry the weight. Copy itself is untouched.
+const metrics = [
+	{ value: '$0', rest: 'at risk' },
+	{ value: '3 months', rest: 'replayed in 2 hours' },
+	{ value: '47/50', rest: 'rules followed' },
+];
+const labels = SHARED_COPY.heroIndicators.map((i) => i.label);
+---
+
+<figure class="v" aria-hidden="true" data-source={labels.join(' · ')}>
+	<div class="v__chart">
+		<svg class="v__svg" viewBox="0 0 220 132" fill="none" focusable="false">
+			<rect x={TRADE.fromX - 180} y={TRADE.target} width="220" height={TRADE.entry - TRADE.target} fill="var(--success)" opacity="0.07" />
+			<rect x={TRADE.fromX - 180} y={TRADE.entry} width="220" height={TRADE.stop - TRADE.entry} fill="var(--error)" opacity="0.09" />
+
+			{CANDLES.filter((c) => c.x <= 200).map((c) => { const { y, height } = bodyRect(c); const s = isUp(c) ? 'var(--success)' : 'var(--error)';
+				return <g><line x1={c.x * 0.82} y1={c.h} x2={c.x * 0.82} y2={c.l} stroke={s} stroke-width="1.4" /><rect x={c.x * 0.82 - BODY_W / 2.4} y={y} width={BODY_W / 1.2} height={height} rx="1.5" fill={s} /></g>; })}
+			{GHOSTS.map((c) => { const { y, height } = bodyRect(c);
+				return <g opacity="0.4"><line x1={c.x * 0.82} y1={c.h} x2={c.x * 0.82} y2={c.l} stroke="var(--dark-400)" stroke-width="1.4" /><rect x={c.x * 0.82 - BODY_W / 2.4} y={y} width={BODY_W / 1.2} height={height} rx="1.5" fill="none" stroke="var(--dark-400)" stroke-width="1.4" /></g>; })}
+
+			<g stroke-dasharray="4 3" stroke-width="1.4">
+				<line x1="4" y1={TRADE.target} x2="216" y2={TRADE.target} stroke="var(--success)" />
+				<line x1="4" y1={TRADE.entry} x2="216" y2={TRADE.entry} stroke="var(--border-brand)" />
+				<line x1="4" y1={TRADE.stop} x2="216" y2={TRADE.stop} stroke="var(--error)" />
+			</g>
+			<g class="v__play"><line x1={PLAYHEAD_X * 0.82} y1="4" x2={PLAYHEAD_X * 0.82} y2="128" stroke="var(--border-brand)" stroke-width="2" /><rect x={PLAYHEAD_X * 0.82 - 5} y="0" width="10" height="10" rx="3" fill="var(--border-brand)" /></g>
+		</svg>
+		<p class="v__caption">Simulated trade · entry, stop, target</p>
+	</div>
+
+	<ul class="v__metrics">
+		{metrics.map((m, i) => (
+			<li class="v__metric">
+				<span class="v__value" data-first={i === 0 ? 'true' : 'false'}>{m.value}</span>
+				<span class="v__rest">{m.rest}</span>
+			</li>
+		))}
+	</ul>
+</figure>
+
+<style>
+	.v { display: grid; gap: var(--space-4); margin: 0; padding: var(--space-4); background: var(--card-bg-secondary); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); background-image: radial-gradient(110% 80% at 30% 0%, var(--brand-wash-faint), transparent 70%); }
+	.v__svg { width: 100%; height: auto; }
+	.v__caption { margin-top: var(--space-2); color: var(--text-secondary); font-size: 0.75rem; }
+	.v__metrics { display: grid; gap: var(--space-3); align-content: center; }
+	.v__metric { display: flex; flex-direction: column; padding-left: var(--space-3); border-left: 2px solid var(--border-primary); }
+	.v__metric:first-child { border-left-color: var(--border-brand); }
+	.v__value { font-family: var(--font-heading); font-weight: var(--weight-heading); font-size: var(--text-xl); line-height: 1.1; font-variant-numeric: tabular-nums; }
+	.v__value[data-first='true'] { color: var(--text-link); }
+	.v__rest { color: var(--text-secondary); font-size: var(--text-sm); }
+	@media (min-width: 26rem) { .v { grid-template-columns: 1.55fr 1fr; gap: var(--space-5); align-items: center; } }
+	@media (prefers-reduced-motion: no-preference) { .v__play { animation: sweep 2.2s ease-out 0.3s both; } }
+	@keyframes sweep { from { transform: translateX(-60px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>

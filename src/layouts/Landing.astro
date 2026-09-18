@@ -1,0 +1,186 @@
+---
+import { SHARED_COPY } from '../content/shared';
+import { getSiteUrl, isIndexable } from '../lib/site';
+import '../styles/tokens.css';
+import '../styles/scale.css';
+import '../styles/global.css';
+
+interface Props {
+	/** Overrides the shared title; the landing deliberately does not. */
+	title?: string;
+	description?: string;
+}
+
+const { title = SHARED_COPY.seo.title, description = SHARED_COPY.seo.description } =
+	Astro.props;
+
+const site = getSiteUrl();
+const canonical = new URL(Astro.url.pathname, site).href;
+// A raster image, not the brand SVG: Facebook, LinkedIn, X and Slack do not
+// render SVG previews, so summary_large_image would come out blank.
+const ogImage = new URL('/og-image.png', site).href;
+const logo = new URL('/brand/FXReplayLogo.svg', site).href;
+const indexable = isIndexable();
+
+/* Organization + SoftwareApplication, per docs. No aggregateRating and no
+ * review count: we have no sourced rating data, and inventing structured data
+ * is fabricating a claim in a format search engines treat as factual. */
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@graph': [
+		{
+			'@type': 'Organization',
+			'@id': `${site}/#organization`,
+			name: 'FX Replay',
+			url: site,
+			logo,
+		},
+		{
+			'@type': 'SoftwareApplication',
+			'@id': `${site}/#software`,
+			name: 'FX Replay',
+			applicationCategory: 'FinanceApplication',
+			operatingSystem: 'Web',
+			description: SHARED_COPY.seo.description,
+			publisher: { '@id': `${site}/#organization` },
+			offers: {
+				'@type': 'Offer',
+				price: '0',
+				priceCurrency: 'USD',
+				description: SHARED_COPY.trustLine,
+			},
+		},
+	],
+};
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		{!indexable && <meta name="robots" content="noindex, nofollow" />}
+
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="FX Replay" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:image:width" content="1200" />
+		<meta property="og:image:height" content="630" />
+		<meta property="og:image:alt" content="FX Replay" />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImage} />
+
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" sizes="32x32" />
+
+		{/* Lato 700 is the only preloaded weight. Measured 2026-09-18: the LCP
+		    element is actually p.hero__sub (Nunito Sans 400), not the h1 — the
+		    hero visual pushed it into the largest-paint slot. Preloading it too
+		    was considered and rejected: under font-display: swap the LCP paints
+		    with the fallback either way, and a second preload competes with the
+		    first for the same early bandwidth. */}
+		<link
+			rel="preload"
+			href="/fonts/lato-latin-700-normal.woff2"
+			as="font"
+			type="font/woff2"
+			crossorigin
+		/>
+
+		<script is:inline>
+			document.documentElement.classList.add('js');
+		</script>
+		<meta name="generator" content={Astro.generator} />
+		<script
+			type="application/ld+json"
+			set:html={JSON.stringify(jsonLd)}
+			is:inline
+		/>
+	</head>
+	<body>
+		<a class="skip-link" href="#main">Skip to content</a>
+		<slot />
+
+		{/* One observer for three jobs: text reveals, the social-proof counters
+		    and the header CTA. Inline so it costs no request, and it degrades to
+		    "everything visible, final numbers shown" if it never runs. */}
+		<script is:inline>
+			(function () {
+				var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+				var root = document.documentElement;
+
+				function show(el) {
+					el.classList.add('is-visible');
+				}
+
+				// ── Text reveals ──
+				var reveals = document.querySelectorAll('.reveal');
+				if (still || !('IntersectionObserver' in window)) {
+					reveals.forEach(show);
+				} else {
+					var revealer = new IntersectionObserver(
+						function (entries) {
+							entries.forEach(function (e) {
+								if (!e.isIntersecting) return;
+								var el = e.target;
+								setTimeout(function () { show(el); }, +(el.dataset.reveal || 0));
+								revealer.unobserve(el);
+							});
+						},
+						{ rootMargin: '0px 0px -12% 0px', threshold: 0.15 }
+					);
+					reveals.forEach(function (el) { revealer.observe(el); });
+				}
+
+				// ── Counters ── the final value is already in the HTML; this only
+				// replaces it while counting, then puts it back verbatim.
+				var counters = document.querySelectorAll('[data-count-to]');
+				if (!still && 'IntersectionObserver' in window) {
+					var counter = new IntersectionObserver(
+						function (entries) {
+							entries.forEach(function (e) {
+								if (!e.isIntersecting) return;
+								var el = e.target;
+								counter.unobserve(el);
+								var final = el.textContent;
+								var to = +el.dataset.countTo;
+								var pre = el.dataset.countPrefix || '';
+								var post = el.dataset.countSuffix || '';
+								var compact = el.dataset.countCompact === 'true';
+								var fmt = new Intl.NumberFormat('en', compact ? { notation: 'compact' } : {});
+								var start = performance.now();
+								(function step(now) {
+									var t = Math.min((now - start) / 900, 1);
+									var eased = 1 - Math.pow(1 - t, 3);
+									el.textContent = t < 1 ? pre + fmt.format(Math.round(to * eased)) + post : final;
+									if (t < 1) requestAnimationFrame(step);
+								})(start);
+							});
+						},
+						{ threshold: 0.6 }
+					);
+					counters.forEach(function (el) { counter.observe(el); });
+				}
+
+				// ── Header CTA: hidden while the hero is on screen ──
+				var hero = document.querySelector('[data-hero]');
+				if (hero && 'IntersectionObserver' in window) {
+					new IntersectionObserver(
+						function (entries) {
+							root.toggleAttribute('data-past-hero', !entries[0].isIntersecting);
+						},
+						{ threshold: 0 }
+					).observe(hero);
+				}
+			})();
+		</script>
+	</body>
+</html>

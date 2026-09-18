@@ -1,70 +1,53 @@
 ---
 // Rendered on demand so the middleware can assign a variant per request
-// (decision D16). Without this the page would be prerendered at build time,
-// where there are no cookies and no request to vary on.
+// (decision D16). Prerendering would run the middleware at build time, where
+// there is no request to vary on.
 export const prerender = false;
 
+import Faq from '../components/Faq.astro';
+import FinalCta from '../components/FinalCta.astro';
+import Footer from '../components/Footer.astro';
+import Guide from '../components/Guide.astro';
+import Header from '../components/Header.astro';
+import Hero from '../components/Hero.astro';
+import HowItWorks from '../components/HowItWorks.astro';
+import Outcome from '../components/Outcome.astro';
+import PlanPreview from '../components/PlanPreview.astro';
+import Problem from '../components/Problem.astro';
+import SocialProof from '../components/SocialProof.astro';
+import Testimonials from '../components/Testimonials.astro';
 import { getVariantCopy } from '../content/variants';
+import Landing from '../layouts/Landing.astro';
 import { CONTROL_VARIANT } from '../lib/variants';
-import '../styles/tokens.css';
 
-// Falls back to the control rather than blanking if the middleware somehow
-// did not run: a wrong arm is recoverable, a broken landing is not.
+// Falls back to the control rather than blanking if the middleware somehow did
+// not run: a wrong arm is recoverable, a broken landing is not.
 const variant = Astro.locals.variant ?? CONTROL_VARIANT;
 const isQa = Astro.locals.isQa ?? true;
 const copy = getVariantCopy(variant);
 ---
 
-<!doctype html>
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<!-- Still a scaffold, not the landing. Remove with the real sections. -->
-		<meta name="robots" content="noindex" />
-		<meta name="generator" content={Astro.generator} />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" sizes="32x32" />
-		<title>Try FX Replay Free</title>
-	</head>
-	<body data-variant={variant} data-qa={String(isQa)}>
-		<main>
-			<h1>{copy.hero.headline}</h1>
-			<p>{copy.hero.subheadline}</p>
-		</main>
-	</body>
-</html>
+<Landing>
+	<Header />
 
-<style>
-	/* Raw lengths: the brand kit defines colors and font families, but no
-	   spacing or type scale. Those get added as tokens with the landing. */
-	body {
-		margin: 0;
-		min-height: 100dvh;
-		display: grid;
-		place-content: center;
-		gap: 0.75rem;
-		padding: 1.5rem;
-		background: var(--bg-primary);
-		color: var(--text-primary);
-		font-family: var(--font-body);
-		text-align: center;
-	}
+	<main id="main" data-variant={variant} data-qa={String(isQa)}>
+		{/* StoryBrand order — docs/experience.md §1 */}
+		<Hero copy={copy} />
+		<SocialProof />
+		<Problem copy={copy} />
+		<Guide />
+		<PlanPreview copy={copy} />
+		<HowItWorks />
+		<Outcome />
+		<Testimonials />
+		<Faq />
+		<FinalCta copy={copy} />
 
-	main {
-		max-width: 38rem;
-	}
+		{/* Where the quiz mounts in block 3. Every CTA points here. */}
+		<div id="plan" class="visually-hidden" tabindex="-1">
+			The quiz opens here.
+		</div>
+	</main>
 
-	h1 {
-		margin: 0 0 0.75rem;
-		font-family: var(--font-heading);
-		font-size: 1.75rem;
-		line-height: 1.2;
-	}
-
-	p {
-		margin: 0;
-		color: var(--text-secondary);
-		line-height: 1.6;
-	}
-</style>
+	<Footer />
+</Landing>

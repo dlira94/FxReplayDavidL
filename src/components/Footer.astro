@@ -1,0 +1,57 @@
+---
+import { SHARED_COPY } from '../content/shared';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+	<div class="container container--narrow footer__inner">
+		<a href="/" class="footer__logo" aria-label="FX Replay home">
+			<img src="/brand/isotypeWhite.svg" alt="" width="20" height="20" />
+			<span>FX Replay</span>
+		</a>
+
+		<!-- Stated plainly, once. An honest description of what the product is,
+		     not a warning bolted on, so it is body text and never an alert. -->
+		<p class="footer__disclaimer">{SHARED_COPY.footerDisclaimer}</p>
+
+		<p class="footer__legal">© {year} FX Replay</p>
+	</div>
+</footer>
+
+<style>
+	.footer {
+		padding-block: var(--space-7);
+		border-top: 1px solid var(--border-primary);
+	}
+
+	.footer__inner {
+		display: grid;
+		gap: var(--space-4);
+	}
+
+	.footer__logo {
+		display: inline-flex;
+		align-items: center;
+		/* 44px touch target (CLAUDE.md), which an inline link does not reach
+		   on its own. */
+		min-height: 2.75rem;
+		gap: var(--space-2);
+		justify-self: start;
+		color: var(--text-primary);
+		font-family: var(--font-heading);
+		font-weight: var(--weight-heading);
+		text-decoration: none;
+	}
+
+	.footer__disclaimer {
+		max-width: 46rem;
+		color: var(--text-secondary);
+		font-size: var(--text-sm);
+	}
+
+	.footer__legal {
+		color: var(--text-disabled);
+		font-size: var(--text-sm);
+	}
+</style>

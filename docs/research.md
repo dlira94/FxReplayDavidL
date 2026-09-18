@@ -11,7 +11,19 @@ Desk research conducted Sep 17, 2026. Sources at the bottom. Pain selection is a
 - **Core features relevant to messaging:** TradingView-style charts, multi-chart / multi-asset sessions, built-in journal, prop firm simulator (custom drawdown / profit-target rules), Mentor AI on simulated sessions, Monte Carlo and R:R analytics, economic calendar context.
 - **Offer structure:** a **Free plan** (no credit card, never expires) plus a **5-day trial of paid plans** (card required). Paid tiers: Intermediate ≈ $17.99/mo, Pro ≈ $35/mo, with regional pricing.
 - **Social proof in market:** "Trusted by 1M+ traders" on the homepage; ~600 Trustpilot reviews.
+
+  **Figures used on the landing** — the social-proof bar shows numbers only, so each one is pinned to where it comes from. Nothing else on the page is allowed to become a number.
+
+  | Figure | Claim | Source |
+  |---|---|---|
+  | `1M+` | traders | FX Replay's own homepage ("Trusted by 1M+ traders") |
+  | `600+` | reviews on Trustpilot | Trustpilot profile. **Verified 2026-09-18: still 600+.** A review count moves, so re-check if this sits unshipped for long — a stale number is a wrong number, and this is the only figure on the bar that can go out of date without anyone noticing |
+  | `$0` | real money at risk | Product fact, not a metric: FX Replay is a replay/simulation platform (§1 Positioning, "zero real money involved"). The only figure here that cannot go out of date |
 - **Positioning:** a *practice room*, not a broker, not an automated strategy engine. Educational framing: zero real money involved.
+
+- **Plan tiers and market access** *(third-party source)*: LuxAlgo's platform overview reports three tiers — Beginner (free; 2 sessions, 50 trades per session, one-week retention), Intermediate (≈$17.99/mo), Pro (≈$35/mo; unlimited sessions and retention) — and states that **"the pricing table reserves seconds data and futures/CME access for Pro."**
+  Source: [LuxAlgo, *FX Replay backtesting platform overview*, July 2025](https://www.luxalgo.com/blog/fx-replay-backtesting-platform-overview/).
+  **Caveat:** this is a third party, not FX Replay's own pricing page, and it is from July 2025. It is the basis for the futures line in the practice plan (`decisions.md` D26), so **re-check it against FX Replay's live pricing page before production.** The same source also describes the free tier as *capped* (2 sessions, 50 trades), which is narrower than "free forever" alone implies — worth confirming before any copy leans on free-plan generosity.
 
 **Implication for this challenge:** "Try FX Replay Free" should lead to the **Free plan** (no card). That is the lowest-friction conversion and matches the business objective (account creation), so the landing never mentions a card.
 

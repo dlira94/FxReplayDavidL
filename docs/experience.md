@@ -15,7 +15,7 @@ Mobile-first. Dark-first brand (`--bg-primary`). One primary action per screen.
 | 7 | 3-step plan | Answer → Get plan → Practice free | shared |
 | 8 | Success vs failure | Short contrast block | shared |
 | 9 | FAQ | Objection handling (`<details>`) | shared |
-| 10 | Final CTA + footer | Repeat primary CTA | shared |
+| 10 | Final CTA + footer | Repeat primary CTA | shared layout, [variant] title (the section heading is `quizIntro`); CTA label shared |
 
 All CTAs open the quiz. The quiz opens **inline** (replaces the page content area, URL `#plan`) rather than as a modal: better on mobile, simpler focus management, and it survives back-button use.
 
@@ -69,6 +69,10 @@ Generated client-side from answers by **deterministic rules** in `src/lib/plan.t
    - 1–3 years → test the same setup across 2 markets / sessions
    - 3+ years → stress-test drawdowns and bad periods
 4. **Where to practice**, from market: suggested instruments and session
+   - Forex → EUR/USD and GBP/USD, during the London–New York overlap
+   - Futures → ES and NQ at the New York open (futures data requires a paid plan; practice the same setup on an index meanwhile)
+   - Crypto → BTC/USD and ETH/USD; the market runs 24/7, so weekends count too
+   - Indices / other → Your market's main index, at its opening session
 5. **Tools to use in FX Replay**, from goal
    - Validate → journal + performance analytics
    - Prop challenge → prop firm simulator with your firm's rules

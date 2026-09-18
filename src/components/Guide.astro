@@ -1,0 +1,71 @@
+---
+import { SHARED_COPY } from '../content/shared';
+import IconCompass from './icons/IconCompass.astro';
+---
+
+<section class="section section--band" aria-labelledby="guide-title">
+	<div class="container guide">
+		<div class="guide__empathy reveal">
+			<IconCompass />
+			<span class="eyebrow">Your guide</span>
+			<h2 id="guide-title" class="guide__quote">{SHARED_COPY.guide.empathy}</h2>
+		</div>
+		<ul class="guide__claims reveal" data-reveal="120">
+			{
+				SHARED_COPY.guide.authority.map((claim) => (
+					<li class="guide__claim">
+						<span class="guide__marker" aria-hidden="true" />
+						{claim}
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</section>
+
+<style>
+	.guide {
+		display: grid;
+		gap: var(--space-7);
+	}
+
+		.guide__empathy :global(.icon) {
+		margin-bottom: var(--space-3);
+	}
+
+	.guide__quote {
+		font-size: var(--text-xl);
+		line-height: var(--leading-snug);
+		color: var(--text-primary);
+	}
+
+	.guide__claims {
+		display: grid;
+		gap: var(--space-4);
+	}
+
+	.guide__claim {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-3);
+		color: var(--text-secondary);
+	}
+
+	/* Brand blue: this is the guide's authority (D24). */
+	.guide__marker {
+		flex-shrink: 0;
+		width: 0.5rem;
+		height: 0.5rem;
+		margin-top: 0.55rem;
+		border-radius: var(--radius-full);
+		background: var(--border-brand);
+	}
+
+	@media (min-width: 48rem) {
+		.guide {
+			grid-template-columns: 1fr 1fr;
+			gap: var(--space-8);
+			align-items: center;
+		}
+	}
+</style>
