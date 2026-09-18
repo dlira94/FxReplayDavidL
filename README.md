@@ -54,6 +54,8 @@ CI runs types, build and unit tests on every pull request and on `main`.
 
 ## Layout
 
+Where things go as the build progresses — `docs/` and `.claude/` are in place, `src/` is filling in.
+
 ```
 src/
   pages/            landing, dashboard, API routes
