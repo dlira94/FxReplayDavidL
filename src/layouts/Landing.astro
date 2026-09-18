@@ -1,0 +1,98 @@
+---
+import { SHARED_COPY } from '../content/shared';
+import { getSiteUrl, isIndexable } from '../lib/site';
+import '../styles/tokens.css';
+import '../styles/scale.css';
+import '../styles/global.css';
+
+interface Props {
+	/** Overrides the shared title; the landing deliberately does not. */
+	title?: string;
+	description?: string;
+}
+
+const { title = SHARED_COPY.seo.title, description = SHARED_COPY.seo.description } =
+	Astro.props;
+
+const site = getSiteUrl();
+const canonical = new URL(Astro.url.pathname, site).href;
+const ogImage = new URL('/brand/FXReplayLogo.svg', site).href;
+const indexable = isIndexable();
+
+/* Organization + SoftwareApplication, per docs. No aggregateRating and no
+ * review count: we have no sourced rating data, and inventing structured data
+ * is fabricating a claim in a format search engines treat as factual. */
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@graph': [
+		{
+			'@type': 'Organization',
+			'@id': `${site}/#organization`,
+			name: 'FX Replay',
+			url: site,
+			logo: ogImage,
+		},
+		{
+			'@type': 'SoftwareApplication',
+			'@id': `${site}/#software`,
+			name: 'FX Replay',
+			applicationCategory: 'FinanceApplication',
+			operatingSystem: 'Web',
+			description: SHARED_COPY.seo.description,
+			publisher: { '@id': `${site}/#organization` },
+			offers: {
+				'@type': 'Offer',
+				price: '0',
+				priceCurrency: 'USD',
+				description: SHARED_COPY.trustLine,
+			},
+		},
+	],
+};
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={canonical} />
+		{!indexable && <meta name="robots" content="noindex, nofollow" />}
+
+		<meta property="og:type" content="website" />
+		<meta property="og:site_name" content="FX Replay" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:image" content={ogImage} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImage} />
+
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" sizes="32x32" />
+
+		{/* The H1 is the LCP element, so its weight is the only font preloaded. */}
+		<link
+			rel="preload"
+			href="/fonts/lato-latin-700-normal.woff2"
+			as="font"
+			type="font/woff2"
+			crossorigin
+		/>
+
+		<meta name="generator" content={Astro.generator} />
+		<script
+			type="application/ld+json"
+			set:html={JSON.stringify(jsonLd)}
+			is:inline
+		/>
+	</head>
+	<body>
+		<a class="skip-link" href="#main">Skip to content</a>
+		<slot />
+	</body>
+</html>
