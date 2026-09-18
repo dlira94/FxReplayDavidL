@@ -1,6 +1,12 @@
 {
   "disableClaudeAiConnectors": true,
-  "enabledMcpjsonServers": ["mobbin", "playwright"],
+  "enabledMcpjsonServers": [
+    "mobbin",
+    "playwright"
+  ],
+  "enabledPlugins": {
+    "vercel@claude-plugins-official": false
+  },
   "permissions": {
     "allow": [
       "Bash(npm run build)",
@@ -17,7 +23,10 @@
       "Read(./.env)",
       "Read(./.env.local)",
       "Read(./.env.production)",
-      "Bash(git push --force:*)"
+      "Bash(git push --force:*)",
+      "Bash(vercel:*)",
+      "Bash(npx vercel:*)",
+      "Bash(gh:*)"
     ]
   }
 }
