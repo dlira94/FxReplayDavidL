@@ -1,0 +1,84 @@
+---
+/**
+ * The page has exactly one primary action. Every CTA points at #plan, where the
+ * quiz mounts in block 3; until then the anchor simply scrolls to the section.
+ *
+ * `location` is carried as a data attribute so the analytics layer can read
+ * which CTA was clicked without each call site knowing about tracking.
+ */
+interface Props {
+	label: string;
+	variant?: 'primary' | 'transitional';
+	location: 'header' | 'hero' | 'plan_preview' | 'final';
+	href?: string;
+	block?: boolean;
+	class?: string;
+}
+
+const {
+	label,
+	variant = 'primary',
+	location,
+	href = '#plan',
+	block = false,
+	class: className,
+} = Astro.props;
+---
+
+<a
+	href={href}
+	class:list={['cta', `cta--${variant}`, block && 'cta--block', className]}
+	data-cta-location={location}
+>
+	{label}
+</a>
+
+<style>
+	.cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		/* 48px floor: comfortably over the 44px touch-target minimum. */
+		min-height: 3rem;
+		padding: var(--space-3) var(--space-6);
+		border-radius: var(--radius-md);
+		font-weight: var(--weight-emphasis);
+		text-align: center;
+		text-decoration: none;
+		transition:
+			background-color var(--transition-fast),
+			border-color var(--transition-fast);
+	}
+
+	.cta--block {
+		width: 100%;
+	}
+
+	/* Brand blue marks the call to action: where the guide asks you to act (D24). */
+	.cta--primary {
+		background: var(--btn-bg-primary-active);
+		color: var(--btn-text);
+	}
+
+	.cta--primary:hover {
+		background: var(--btn-bg-primary-hover);
+	}
+
+	.cta--primary:active {
+		background: var(--btn-bg-primary-pressed);
+	}
+
+	.cta--transitional {
+		background: var(--btn-bg-outline-active);
+		color: var(--text-primary);
+		border: 1px solid var(--btn-border-outline);
+	}
+
+	.cta--transitional:hover {
+		background: var(--btn-bg-outline-hover);
+	}
+
+	.cta--transitional:active {
+		background: var(--btn-bg-outline-pressed);
+	}
+</style>

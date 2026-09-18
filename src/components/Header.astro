@@ -1,0 +1,55 @@
+---
+import { SHARED_COPY } from '../content/shared';
+import Cta from './Cta.astro';
+---
+
+<header class="header">
+	<div class="container header__inner">
+		<a href="/" class="header__logo" aria-label="FX Replay home">
+			<img src="/brand/isotypeWhite.svg" alt="" width="24" height="24" />
+			<span>FX Replay</span>
+		</a>
+		<Cta label={SHARED_COPY.primaryCta} location="header" class="header__cta" />
+	</div>
+</header>
+
+<style>
+	.header {
+		position: sticky;
+		top: 0;
+		z-index: 50;
+		background: color-mix(in srgb, var(--bg-primary) 85%, transparent);
+		backdrop-filter: blur(12px);
+		border-bottom: 1px solid var(--border-primary);
+	}
+
+	.header__inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+		min-height: 3.5rem;
+	}
+
+	.header__logo {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		color: var(--text-primary);
+		font-family: var(--font-heading);
+		font-weight: var(--weight-heading);
+		text-decoration: none;
+	}
+
+	/* The hero CTA is right there on small screens; a second one in the header
+	   would be two competing primary actions in one viewport. */
+	.header__cta {
+		display: none;
+	}
+
+	@media (min-width: 48rem) {
+		.header__cta {
+			display: inline-flex;
+		}
+	}
+</style>
