@@ -18,6 +18,7 @@ Evaluators care about judgment, trade-offs, measurement and the AI workflow more
 | Audience, pains, copy guardrails | `docs/research.md` |
 | Every word on the page (3 variants) | `docs/messaging.md` |
 | Sections, quiz flow, states, plan rules, a11y | `docs/experience.md` |
+| System shape, trade-offs, infrastructure | `docs/architecture.md` |
 | API contract, data model, persistence | `docs/api.md` |
 | Event spec, funnel, data quality | `docs/analytics.md` |
 | Hypothesis, metrics, sample size, decision rules | `docs/experiment.md` |
@@ -52,7 +53,7 @@ npm test           # unit (Vitest)
 npm run test:e2e   # Playwright
 ```
 
-## Structure (target)
+## Structure
 
 ```
 src/
