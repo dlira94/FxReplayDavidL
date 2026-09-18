@@ -25,6 +25,10 @@ Server     ── Drizzle ──────────────────
 | `anonymous_id` | first-party cookie `fxr_aid` (UUID, set by middleware) | Dedupes POSTs; joins pre-signup behavior |
 | `variant` | cookie `fxr_variant` (set by middleware) | Experiment arm; on every event |
 | GA4 `client_id` + `session_id` | read from `_ga` cookies on the client, sent with `POST /api/users`, stored on the user | Lets the server-side `account_created` land in the **same GA4 session** as the browser events, keeping source/medium attribution |
+
+**When the `_ga` cookies do not exist yet.** GTM loads deferred (D10), so a visitor who converts quickly can have no `client_id` at all. The server then derives one from `anonymous_id` — a stable hash, not a random value, so the same visitor always maps to the same GA4 client and a retry cannot invent a second user. **That conversion is counted but loses its session attribution:** it will not join the browser session, so source/medium for that user comes from the `utm_*` fields stored with the signup rather than from GA4. Counting it wrong beats not counting it, and the server logs which conversions used a derived id so the rate is knowable rather than silent (decision D43).
+
+Delivery is retried with backoff (0.5s, 2s, 6s) inside `waitUntil`, so a transient GA4 failure does not cost the event and the visitor never waits. A 4xx is not retried — a malformed payload stays malformed.
 | `user_id` | internal UUID after step 1 | Sent to GA4 as `user_id` (not PII) |
 
 ## 3. Common properties (every event)
@@ -40,7 +44,7 @@ Server     ── Drizzle ──────────────────
 | `experiment_exposure` | Landing rendered with an assigned variant (once per session). **GA4 mirror** of the `exposures` row the middleware writes; the table is the source of truth | — |
 | `cta_click` | Any CTA that opens the quiz | `cta_location` (`header`, `hero`, `plan_preview`, `final`) |
 | `plan_preview_view` | Plan preview section ≥ 50 % visible (once) | — |
-| `quiz_start` | Quiz step 1 shown | `entry_cta_location` |
+| `quiz_start` | **Intent, not visibility** — a click on a CTA that opens the quiz, or the first focus or keystroke in the name field, whichever comes first. Once per session | `entry_cta_location` |
 | `quiz_step_complete` | A step is submitted successfully | `step_number`, `step_name`, `answer` (enum value; **omitted** for name and email) |
 | `quiz_step_back` | Back pressed | `from_step` |
 | `quiz_error` | Error shown to the user | `step_number`, `error_code` (`network`, `validation`, `server`) |
@@ -64,6 +68,8 @@ GA4 automatic `page_view` stays on; enhanced-measurement form events are **disab
 | Qualified | `quiz_step_complete` step 5 | completion = step 5 ÷ starts |
 | Submit | `signup_submit` | |
 | **Conversion** | **`account_created`** | email-step conversion = created ÷ step 5 |
+
+> `quiz_start` originally fired when the island hydrated. Because the quiz is **inline** rather than a modal, that counted every visitor who scrolled to the bottom of the page as a start, inflating the start rate and making the intent stage meaningless. Caught in Tag Assistant, where `quiz_start` arrived *before* `cta_click` with a scroll in between (D42). A programmatic focus — the island focusing its own input on mount — does not count either.
 
 **Primary conversion event:** `account_created`
 **Primary metric:** `users` with `status = 'converted'` ÷ rows in `exposures`, per variant — both from Postgres, served by `GET /api/stats`.
