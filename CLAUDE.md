@@ -112,6 +112,9 @@ tests/unit/  tests/e2e/
 4. When you make or discover a decision, add a row to `docs/decisions.md`.
 5. Don't add dependencies without saying why. Prefer platform features.
 6. Never delete or overwrite files in `docs/` without asking.
+7. **Never run the Vercel CLI or `gh` in this repo.** Both are signed in to David's work accounts — the Vercel CLI to the Receptive team, `gh` to `davidPettable` — so a command meant for this project would act on a client's infrastructure. This holds even for read-only commands: an identity that can't be trusted for writes can't be trusted as evidence either (decision D14).
+   - **Deploys happen only through `git push`** to the `github-dlira94` remote. Never deploy by hand.
+   - **To read anything from Vercel** — deploy state, build or runtime logs, preview URLs, Web Analytics — use the Vercel MCP, which is authenticated to `DavidLiraStuff`. If it returns no teams or fails to list projects, it's pointing at the wrong account: say so and stop, don't reach for the CLI as a fallback.
 
 ## Definition of done
 
