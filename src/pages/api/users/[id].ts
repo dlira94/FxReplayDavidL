@@ -143,11 +143,13 @@ export const PATCH: APIRoute = async ({ request, params, cookies, locals }) => {
 		// status transition happens once, so it cannot fire twice. The stamp
 		// makes that a fact in the database rather than a property of control
 		// flow (D35).
-		if (
-			patch.status === 'converted' &&
-			!updated.accountCreatedSentAt &&
-			!updated.isQa
-		) {
+		// QA conversions are sent too, carrying `is_qa: true`, and excluded in
+		// GA4 reports rather than at the send. Skipping them here made the
+		// event unverifiable: the only way to test a real conversion before
+		// shipping is a QA one, and a filter at the send meant the test showed
+		// nothing. Same rule as bots (D18): recorded, flagged, excluded in
+		// analysis — never dropped at the door (D35).
+		if (patch.status === 'converted' && !updated.accountCreatedSentAt) {
 			const config = mpConfig();
 			if (!config) {
 				console.warn(

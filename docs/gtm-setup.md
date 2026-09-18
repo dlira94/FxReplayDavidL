@@ -4,8 +4,8 @@ Everything below is taken from the code, not from memory. Where a name has to
 match exactly, it is because something in `src/` reads or writes that exact
 string — the file is named each time so you can check rather than trust.
 
-Do it in order. Steps 1–6 are GTM, steps 7–9 are GA4, step 10 is how you prove
-it works before anyone relies on it.
+Do it in order. Steps 1–6 are GTM, steps 7–9 are GA4, step 10 publishes the
+container, and step 11 is how you prove it works before anyone relies on it.
 
 **Before you start you need:** the GTM container ID (`GTM-XXXXXXX`), which goes
 in `PUBLIC_GTM_ID`, and the GA4 measurement ID (`G-XXXXXXXXXX`).
@@ -87,15 +87,23 @@ anchors matter: without `^` and `$`, `quiz_start` also matches a future
 `quiz_started`. `account_created` is deliberately **not** in the list — it is
 sent server-side (step 8).
 
-## 3. Trigger — QA exclusion (optional but recommended)
+## 3. Do **not** filter QA traffic at the tag
 
-**Triggers → New → Custom Event**, same regex as above, then **Some Custom
-Events** with the condition `DLV - is_qa` **equals** `false`.
+It is tempting to add a second trigger with `DLV - is_qa` equals `false` and
+keep QA out of GA4 entirely. Don't.
 
-Name it `CE - all landing events (production only)` and use it on the GA4 event
-tag instead of the unfiltered one if you would rather QA traffic never reach GA4
-at all. The alternative is to let it in and filter in reports (step 9) — both
-work; filtering at the tag is harder to forget.
+Every preview deployment sends `is_qa: true` (decision D18) — so does local dev,
+and so does any `?variant=` override. A tag that drops QA traffic drops
+**everything you would use to verify the setup**: you would configure GTM, open
+the preview, and see an empty DebugView with no way to tell a broken tag from a
+working filter.
+
+QA is excluded where it belongs, in reports, with the `Is QA` dimension
+(step 9). The same rule applies to the server-side `account_created`, which is
+sent for QA conversions too and carries `is_qa: true`
+(`src/pages/api/users/[id].ts`).
+
+Use the single unfiltered trigger from step 2 everywhere.
 
 ## 4. Tag — Google tag
 
@@ -118,7 +126,7 @@ server event still sends but loses its session attribution.**
 - **Measurement ID:** `G-XXXXXXXXXX`
 - **Event Name:** `{{Event}}` — the built-in variable, so one tag covers all
   eleven events rather than eleven near-identical tags
-- **Trigger:** `CE - all landing events` (or the production-only one from step 3)
+- **Trigger:** `CE - all landing events` — the single unfiltered one from step 2
 
 **Event Parameters** — add every row:
 
@@ -153,10 +161,11 @@ cheaper than maintaining one tag per event.
 
 This is what lets you segment *users* by arm in GA4 reports, not just events.
 
-## 6. Turn off enhanced measurement form events
+## 6. Turn off enhanced measurement form events — ✅ already done
 
 **GA4 → Admin → Data streams → your stream → Enhanced measurement → gear icon →
-untick "Form interactions".**
+untick "Form interactions".** *(Confirmed done — no action needed; kept here so
+the list stays complete for anyone repeating the setup.)*
 
 The quiz already emits `quiz_step_complete` per step. Leaving this on would
 double-count every step, and GA4's automatic form events can capture field
@@ -197,8 +206,10 @@ blocker or a closed tab.
 1. **Admin → Data streams → your stream → Measurement Protocol API secrets →
    Create.** Put the value in `GA4_API_SECRET` and the stream's measurement ID
    in `GA4_MEASUREMENT_ID` (both server-side only — never `PUBLIC_`).
-2. Send one conversion so GA4 has seen the event at least once.
-3. **Admin → Events →** find `account_created` **→ Mark as key event.**
+2. **Admin → Key events → New key event**, and type `account_created` exactly.
+   Create it directly; you do not need to wait for GA4 to have seen the event
+   first. Doing it now means the very first real conversion is already counted
+   as a key event rather than being an ordinary event you have to backfill.
 
 It arrives with `user_id`, `client_id`, `session_id`, `variant`,
 `experiment_id`, `is_qa`, `market`, `experience`, `weekly_hours` and `goal`.
@@ -214,7 +225,22 @@ Two layers, because either one alone can be forgotten:
   `false`. Preview deployments, local dev and any `?variant=` override all send
   `is_qa: true` (D18), and none of them are real traffic.
 
-## 10. Verify before trusting any of it
+## 10. Publish the container
+
+Nothing above is live until you publish. **GTM Preview reads your workspace, the
+production container does not** — this is the step whose absence looks exactly
+like a broken tag: Preview shows every event firing, production shows an empty
+GA4.
+
+**Submit → Publish**, and give the version a name and description, e.g.
+`try_free_pain_v1 — landing + quiz events` with a line on what changed. The name
+matters more than it looks: it is what you roll back *to* when a later change
+breaks reporting mid-experiment, and "Version 7" tells you nothing at 11pm.
+
+Re-publish after any change to a tag, trigger or variable. A saved workspace is
+not a published container.
+
+## 11. Verify before trusting any of it
 
 In this order — each step catches something the next one assumes:
 
@@ -233,9 +259,20 @@ In this order — each step catches something the next one assumes:
    container — a GTM variable added later could reintroduce it.
 4. **GA4 DebugView** (Admin → DebugView) with GTM Preview open. Confirm the
    events arrive and carry the custom dimensions.
-5. **`account_created`.** Complete one real conversion in production and confirm
-   it appears in DebugView with `user_id`. The payload shape is already
-   validated against GA4's `/debug/mp/collect` in
+5. **`account_created` in production — use Realtime, not DebugView.** The
+   server-side event does not carry `debug_mode`, so it will **never** appear in
+   DebugView no matter how long you wait. Look in **Reports → Realtime** instead,
+   and give it a minute.
+
+   Run the test conversion through a `?variant=` link
+   (`https://<production>/?variant=time`) so the override flags the session as
+   QA (D18). The event is still sent — QA conversions are not filtered at the
+   send, see step 3 — and arrives with `is_qa: true`, so your test conversion is
+   excluded from every report that filters on `Is QA` while still being visible
+   in Realtime. That is how you verify against production without putting a fake
+   conversion into the experiment.
+
+   The payload shape is already validated against GA4's `/debug/mp/collect` in
    `tests/integration/measurement-protocol.test.ts`, which catches a malformed
    event — the production endpoint answers `204` to anything, including events
    it then silently drops.
