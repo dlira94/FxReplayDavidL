@@ -17,6 +17,8 @@ export const CONTROL_VARIANT: VariantId = 'money';
 
 export const VARIANT_COOKIE = 'fxr_variant';
 export const ANONYMOUS_ID_COOKIE = 'fxr_aid';
+/** httpOnly; authorises PATCH on the user it was issued for (docs/api.md). */
+export const EDIT_TOKEN_COOKIE = 'fxr_edit';
 
 /** Sticky for 30 days, matching the assignment unit in docs/experiment.md. */
 export const COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
