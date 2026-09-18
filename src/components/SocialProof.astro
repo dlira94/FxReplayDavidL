@@ -1,0 +1,80 @@
+---
+import { SHARED_COPY } from '../content/shared';
+
+const [tradersClaim, ...featureClaims] = SHARED_COPY.guide.authority;
+
+// "1M+" is the only figure with a source (docs/research.md), so it is the only
+// one rendered as a number. The other two are capability labels — inventing
+// figures for them would be inventing proof.
+const tradersFigure = '1M+';
+const tradersLabel = tradersClaim.replace('Trusted by 1M+ ', '');
+---
+
+<section class="section section--band proof" aria-label="Why traders trust FX Replay">
+	<div class="container proof__grid">
+		<div class="proof__item proof__item--figure">
+			<p class="proof__figure">{tradersFigure}</p>
+			<p class="proof__label">{tradersLabel}</p>
+		</div>
+		{
+			featureClaims.map((claim) => (
+				<div class="proof__item">
+					<p class="proof__label proof__label--feature">{claim}</p>
+				</div>
+			))
+		}
+	</div>
+</section>
+
+<style>
+	.proof {
+		/* Tight against the hero: it validates before doubt sets in. */
+		padding-block: var(--space-7);
+	}
+
+	.proof__grid {
+		display: grid;
+		gap: var(--space-5);
+	}
+
+	.proof__item + .proof__item {
+		padding-top: var(--space-5);
+		border-top: 1px solid var(--border-primary);
+	}
+
+	.proof__figure {
+		font-family: var(--font-heading);
+		font-weight: var(--weight-heading);
+		font-size: var(--text-2xl);
+		line-height: var(--leading-tight);
+	}
+
+	.proof__label {
+		color: var(--text-secondary);
+		font-size: var(--text-sm);
+	}
+
+	.proof__item--figure .proof__label {
+		margin-top: var(--space-1);
+	}
+
+	.proof__label--feature {
+		color: var(--text-primary);
+		font-size: var(--text-base);
+	}
+
+	@media (min-width: 48rem) {
+		.proof__grid {
+			grid-template-columns: repeat(3, 1fr);
+			gap: var(--space-6);
+			align-items: center;
+		}
+
+		.proof__item + .proof__item {
+			padding-top: 0;
+			padding-left: var(--space-6);
+			border-top: none;
+			border-left: 1px solid var(--border-primary);
+		}
+	}
+</style>
