@@ -32,13 +32,28 @@ Landing (variant: money | time | discipline)
 layout, same quiz, same plan logic. One variable, so the read is clean.
 Assignment is server-side and sticky; the client never picks it.
 
-**Measurement** is part of the product. Behavioural events go through a typed
+**Measurement** is part of the product. Behavioral events go through a typed
 `track()` helper into GTM/GA4; the conversion is sent server-side so ad blockers
 cannot eat it; Postgres is the source of truth for both sides of the ratio. No
 PII ever reaches analytics.
 
-**Performance:** the landing ships **zero application JavaScript**. The quiz
-island (~21 KB gzip) is fetched only when someone opens it.
+**Performance:** before any interaction the landing runs **~4.2 KB gzip of
+JavaScript**, all of it inline in the document — **zero script requests**. The
+quiz island (~21.8 KB gzip) is fetched only when someone opens the quiz.
+
+### Measured in production
+
+Lighthouse mobile, with GTM and GA4 live — not a version with analytics
+switched off. Full detail and method in
+[`performance.md`](docs/performance.md).
+
+| | |
+|---|---|
+| Lighthouse | **99 / 100 / 100 / 100** — performance · accessibility · best practices · SEO |
+| LCP · CLS | **1.26 s** · **0** |
+| JS before interaction | **4.2 KB gzip**, 0 script requests |
+| JS on opening the quiz | **21.8 KB gzip** |
+| Tests | **240** — 172 unit · 31 integration · 37 e2e |
 
 ## Stack
 
@@ -107,22 +122,25 @@ tests/              unit · integration · e2e
 .claude/            the skills and agents used to build this
 ```
 
-## Documents, mapped to the six deliverables
+## Deliverables
 
-The written thinking is as much the deliverable as the code.
+Mapped to the six in [`challenge.pdf`](docs/challenge.pdf).
 
-| Challenge deliverable | Where it lives |
-|---|---|
-| **1. Strategy and audience** | [`brief.md`](docs/brief.md) — goal, scope, what is deliberately out · [`research.md`](docs/research.md) — audience, pains, voice of customer, sourced claims |
-| **2. Messaging and copy** | [`messaging.md`](docs/messaging.md) — every word on the page, per variant, StoryBrand frame and guardrails |
-| **3. The experience** | [`experience.md`](docs/experience.md) — sections, quiz flow, every state, plan rules, accessibility baseline |
-| **4. Technical implementation** | [`architecture.md`](docs/architecture.md) — structure, diagram, trade-offs, infrastructure, what production would change · [`api.md`](docs/api.md) — contract, data model, persistence |
-| **5. Measurement** | [`analytics.md`](docs/analytics.md) — event spec, funnel, data quality · [`experiment.md`](docs/experiment.md) — hypothesis, metrics, sample size, decision rules · [`gtm-setup.md`](docs/gtm-setup.md) — the setup, step by step |
-| **6. AI workflow** | [`ai-workflow.md`](docs/ai-workflow.md) — the two layers and how they fit · [`ai-log.md`](docs/ai-log.md) — what was delegated, corrected and rejected, with the reasoning |
+| # | Deliverable | Where it is |
+|---|---|---|
+| **1** | **Working Implementation** | Live at **https://fxreplaydavidlira.vercel.app** · this repository · ["Running it locally"](#running-it-locally) above |
+| **2** | **Architecture Overview** | [`architecture.md`](docs/architecture.md) — structure, diagram, trade-offs, infrastructure, what production would change · [`api.md`](docs/api.md) — contract, data model, persistence |
+| **3** | **Analytics Plan** | [`analytics.md`](docs/analytics.md) — event spec, funnel, identity, data quality · [`gtm-setup.md`](docs/gtm-setup.md) — the GTM and GA4 setup, step by step |
+| **4** | **Experiment Proposal** | [`experiment.md`](docs/experiment.md) — hypothesis, control, metrics, sample size, decision rules |
+| **5** | **AI-Native Workflow** | [`ai-workflow.md`](docs/ai-workflow.md) — the two layers and how they fit · [`ai-log.md`](docs/ai-log.md) — what was delegated, corrected and rejected · [`CLAUDE.md`](CLAUDE.md) · [`.claude/`](.claude) — skills and agents · [`.mcp.json`](.mcp.json) |
+| **6** | **Performance Review** | [`performance.md`](docs/performance.md) — budgets, measured production numbers, and the costs a Lighthouse score does not show |
 
-Cross-cutting: [`decisions.md`](docs/decisions.md) — 46 numbered decisions, each
-with its trade-off. [`performance.md`](docs/performance.md) — budgets, measured
-production numbers, and the costs that a Lighthouse score does not show.
+**Supporting context:** [`brief.md`](docs/brief.md) (goal and scope) ·
+[`research.md`](docs/research.md) (audience, pains, sourced claims) ·
+[`messaging.md`](docs/messaging.md) (every word on the page) ·
+[`experience.md`](docs/experience.md) (sections, quiz flow, states,
+accessibility) · [`decisions.md`](docs/decisions.md) (46 numbered decisions,
+each with its trade-off).
 
 ## Scope & priorities
 
@@ -134,7 +152,7 @@ free account, a deterministic practice plan, a Users API backed by Postgres,
 client and server-side analytics, and an internal dashboard that reads the
 experiment out with confidence intervals and a decision status.
 
-### What I prioritised, and why
+### What I prioritized, and why
 
 **Measurement over surface area.** The brief asks for a conversion experiment,
 so the parts that decide whether a result is trustworthy got the most care:
