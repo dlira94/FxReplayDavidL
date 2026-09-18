@@ -1,0 +1,268 @@
+/* The island's own styles. Loaded with the island, so they cost nothing until
+   someone opens the quiz. Semantic tokens only, like everything else. */
+
+.quiz {
+	max-width: 34rem;
+	margin-inline: auto;
+	padding: var(--space-5);
+	background: var(--card-bg-secondary);
+	border: 1px solid var(--border-brand);
+	border-radius: var(--radius-lg);
+	text-align: left;
+}
+
+.quiz__progress {
+	margin-bottom: var(--space-5);
+}
+
+.quiz__bar {
+	height: 4px;
+	background: var(--bg-tertiary);
+	border-radius: var(--radius-full);
+	overflow: hidden;
+}
+
+.quiz__bar > span {
+	display: block;
+	height: 100%;
+	background: var(--border-brand);
+	transition: width var(--transition-base);
+}
+
+.quiz__count {
+	margin-top: var(--space-2);
+	color: var(--text-secondary);
+	font-size: var(--text-sm);
+}
+
+.quiz__heading {
+	font-family: var(--font-heading);
+	font-size: var(--text-xl);
+	line-height: var(--leading-snug);
+}
+
+/* Focused programmatically on every step change; the ring would read as an
+   error to a mouse user who never asked for it. */
+.quiz__heading:focus {
+	outline: none;
+}
+
+.quiz__heading:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 4px;
+}
+
+.quiz__question {
+	margin-top: var(--space-3);
+	font-size: var(--text-lg);
+}
+
+.quiz__helper {
+	margin-top: var(--space-2);
+	color: var(--text-secondary);
+	font-size: var(--text-sm);
+}
+
+.quiz__lead {
+	margin-top: var(--space-3);
+	color: var(--text-secondary);
+	font-size: var(--text-lg);
+}
+
+.quiz__fieldset {
+	margin: var(--space-5) 0 0;
+	padding: 0;
+	border: 0;
+}
+
+.quiz__options {
+	display: grid;
+	gap: var(--space-3);
+}
+
+/* Native radios inside a label: keyboard and screen-reader behaviour for free
+   (experience.md §5). The card is styling, not a replacement control. */
+.quiz__option {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-height: 3.25rem;
+	padding: var(--space-3) var(--space-4);
+	background: var(--bg-primary);
+	border: 1px solid var(--border-primary);
+	border-radius: var(--radius-md);
+	cursor: pointer;
+	transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.quiz__option:hover {
+	background: var(--bg-tertiary);
+}
+
+.quiz__option:has(input:checked) {
+	border-color: var(--border-brand);
+	background: var(--bg-tertiary);
+}
+
+.quiz__option:has(input:focus-visible) {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+.quiz__option input {
+	width: 1.15rem;
+	height: 1.15rem;
+	accent-color: var(--brand-electric-blue);
+	flex-shrink: 0;
+}
+
+.quiz__form {
+	margin-top: var(--space-5);
+}
+
+.quiz__label {
+	display: block;
+	margin-bottom: var(--space-2);
+	color: var(--text-secondary);
+	font-size: var(--text-sm);
+}
+
+.quiz__input {
+	width: 100%;
+	min-height: 3rem;
+	padding: var(--space-3) var(--space-4);
+	background: var(--bg-primary);
+	border: 1px solid var(--border-secondary);
+	border-radius: var(--radius-md);
+	color: var(--text-primary);
+}
+
+.quiz__input[aria-invalid='true'] {
+	border-color: var(--error);
+}
+
+/* Off-screen rather than display:none: a bot reading the DOM still sees a
+   fillable field, which is the entire point of a honeypot. */
+.quiz__trap {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+.quiz__consent {
+	margin-top: var(--space-4);
+	color: var(--text-secondary);
+	font-size: var(--text-sm);
+}
+
+.quiz__submit {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 3rem;
+	margin-top: var(--space-4);
+	padding: var(--space-3) var(--space-5);
+	background: var(--btn-bg-primary-active);
+	color: var(--btn-text);
+	border: 0;
+	border-radius: var(--radius-md);
+	font-weight: var(--weight-emphasis);
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.quiz__submit:hover:not(:disabled) {
+	background: var(--btn-bg-primary-hover);
+}
+
+.quiz__submit:disabled {
+	background: var(--btn-bg-primary-disabled);
+	color: var(--btn-text-disabled);
+	cursor: progress;
+}
+
+/* Errors are announced and never signalled by colour alone: the text says
+   what is wrong, and aria-describedby ties it to the input. */
+.quiz__error {
+	margin-top: var(--space-3);
+	color: var(--text-error);
+	font-size: var(--text-sm);
+}
+
+.quiz__alert {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3);
+	margin-top: var(--space-4);
+	padding: var(--space-3) var(--space-4);
+	background: var(--banner-bg-info);
+	border: 1px solid var(--border-secondary);
+	border-radius: var(--radius-md);
+	font-size: var(--text-sm);
+}
+
+.quiz__retry,
+.quiz__back {
+	min-height: 2.75rem;
+	padding: var(--space-2) var(--space-4);
+	background: var(--btn-bg-outline-active);
+	color: var(--text-primary);
+	border: 1px solid var(--btn-border-outline);
+	border-radius: var(--radius-md);
+	cursor: pointer;
+}
+
+.quiz__back {
+	margin-top: var(--space-5);
+}
+
+.quiz__notice {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3);
+	margin-bottom: var(--space-4);
+	padding: var(--space-3) var(--space-4);
+	background: var(--banner-bg-secondary);
+	border-radius: var(--radius-md);
+	font-size: var(--text-sm);
+}
+
+.quiz__link {
+	color: var(--text-link);
+}
+
+.result__rows {
+	display: grid;
+	gap: var(--space-4);
+	margin-top: var(--space-5);
+	padding-top: var(--space-5);
+	border-top: 1px solid var(--border-secondary);
+}
+
+.result__row {
+	display: grid;
+	gap: var(--space-1);
+}
+
+.result__label {
+	color: var(--text-secondary);
+	font-size: var(--text-sm);
+}
+
+.result__value {
+	margin: 0;
+	font-weight: var(--weight-emphasis);
+}
+
+@media (min-width: 34rem) {
+	.result__row {
+		grid-template-columns: 13rem 1fr;
+		gap: var(--space-4);
+		align-items: baseline;
+	}
+}

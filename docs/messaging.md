@@ -152,6 +152,14 @@ Question text is **[shared]**; the one-line helper under each question is **[var
 | 5 | What's your main goal right now? | — | — | — |
 | 6 | Email | Creates your free account and saves your plan. | (same) | (same) |
 
+**Result screen [shared]** — the plan's own actions. Both simulated: this is a marketing experience, not the app (`brief.md`).
+
+| Slot | Copy |
+|---|---|
+| Primary action | "Open FX Replay" |
+| 409 heading | "You already have an FX Replay account with this email." |
+| 409 action | "Log in" |
+
 **Consent line (email step, shared):** "By continuing you'll create a free FX Replay account. No credit card. We won't share your email."
 
 ## Copy tokens
