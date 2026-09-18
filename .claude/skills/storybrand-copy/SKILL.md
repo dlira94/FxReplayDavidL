@@ -54,3 +54,36 @@ Report any failure with the slot and the reason, and propose a fix.
 1. Show the filled slots as a table for David's approval. **Do not write files before approval.**
 2. After approval, update `docs/messaging.md` (new variant section, same structure as the others) and `src/content/variants/<id>.ts` (typed; must satisfy the `VariantCopy` type).
 3. If a new variant is added to the experiment, add a row to `docs/decisions.md` and flag that `docs/experiment.md` (allocation, sample size) must be updated.
+
+## Step 5: Copy literally, then prove it — not optional
+
+`docs/messaging.md` is the source of truth. When writing copy into
+`src/content/variants/<id>.ts`, **open the file and copy the strings across
+character for character.** Never reconstruct a slot from memory, from the pain
+framing, from a section heading, or from what you wrote a moment ago in the
+approval table. Do not "improve" punctuation: `It's` does not become `It is`,
+and an em dash stays an em dash.
+
+This has already gone wrong once (`docs/ai-log.md`, Sep 18). Two variants were
+written from memory. The result was fluent, on-brand, consistent with the pain,
+and passed every check in Step 3 — because a good invention obeys all of them.
+Nothing in this skill caught it.
+
+**Why it matters more than it looks.** Copy is the *independent variable* of
+this experiment. Layout, components, questions and plan logic are identical
+across arms precisely so that copy is the only difference. Invented copy does
+not fail loudly: it ships, runs for two weeks, and produces a readout that looks
+exactly as trustworthy as a real one while answering a question nobody approved.
+
+**Before you report the work as done, run:**
+
+```bash
+npm test -- tests/unit/variant-copy.test.ts
+```
+
+It asserts every rendered string appears verbatim in `docs/messaging.md`. If a
+slot legitimately changed, the doc changes first and the test follows — never
+the other way round. **A failure here is never fixed by editing the test.**
+
+If you added a new slot to `VariantCopy`, add it to `renderedStrings()` in that
+test too, or it ships unchecked.
