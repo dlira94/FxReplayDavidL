@@ -76,11 +76,64 @@ Used by `/dashboard`. **Admin only:** `Authorization: Bearer $ADMIN_TOKEN`. The 
 
 Query: `status` (`in_progress` | `converted` | `email_exists`), `variant`, `limit` (1–100, default 50), `cursor`.
 
+For counts rather than records — and for anything an agent consumes — use `GET /api/stats`, which carries no PII.
+
 `200 OK`
 ```json
 { "data": [ { "id": "…", "firstName": "…", "email": "…", "status": "converted", "variant": "money", "lastStep": 6, "utm": { … }, "createdAt": "…", "convertedAt": "…" } ], "nextCursor": "…" }
 ```
 Cursor pagination on `(createdAt, id)`: stable under concurrent inserts, unlike offsets.
+
+### `GET /api/stats` — experiment readout
+
+Aggregated counts for `/dashboard` and the `growth-analyst` agent. **Admin only:**
+`Authorization: Bearer $ADMIN_TOKEN`. Contains **no PII** — it is counts only, which is what
+lets an agent consume it.
+
+Rows with `is_qa` or `is_bot` are excluded from every number below.
+
+Query: `from`, `to` (ISO dates, optional; default all time).
+
+`200 OK`
+```json
+{
+  "experimentId": "try_free_pain_v1",
+  "generatedAt": "2026-09-18T10:00:00Z",
+  "window": { "from": null, "to": null },
+  "excluded": ["is_qa", "is_bot"],
+  "variants": [
+    {
+      "variant": "money",
+      "exposures": 5123,
+      "quizStarts": 812,
+      "conversions": 154,
+      "emailExists": 11,
+      "conversionRate": 0.0301,
+      "dropOffByStep": { "1": 120, "2": 88, "3": 74, "4": 61, "5": 52, "6": 40 }
+    }
+  ],
+  "srm": {
+    "expected": 0.3333,
+    "chiSquare": 1.84,
+    "pValue": 0.398,
+    "status": "ok"
+  }
+}
+```
+
+| Field | Definition |
+|---|---|
+| `exposures` | rows in `exposures` for that variant |
+| `quizStarts` | rows in `users` — a row exists only once step 1 is submitted |
+| `conversions` | `users` with `status = 'converted'` |
+| `emailExists` | `users` with `status = 'email_exists'`, reported separately so it never reads as an abandon |
+| `conversionRate` | `conversions ÷ exposures` — the primary metric |
+| `dropOffByStep` | unconverted `users` grouped by `last_step` |
+| `srm.status` | `ok` \| `alert` (p < 0.001) \| `insufficient_data` |
+
+`quizStarts` is a server-side count of step-1 submissions, not the `quiz_start` intent event:
+someone who opens the quiz and leaves before submitting a name exists only in GA4. The two
+are expected to differ, and the gap is itself a diagnostic.
 
 ## Data model (`users`)
 
@@ -96,8 +149,40 @@ Cursor pagination on `(createdAt, id)`: stable under concurrent inserts, unlike 
 | `last_step` | smallint | furthest step reached → drop-off analysis |
 | `utm_source` … `utm_term` | text, nullable | |
 | `landing_path` | text | |
+| `is_qa` | boolean, default false | True whenever `VERCEL_ENV !== 'production'` (previews, local) or a `?variant=` override was used. Excluded from the readout |
+| `is_bot` | boolean, default false | Copied from the matching exposure (user-agent heuristic). Excluded from the readout |
 | `edit_token_hash` | text | SHA-256 of the edit token |
 | `created_at` / `updated_at` / `converted_at` | timestamptz | |
+
+## Data model (`exposures`)
+
+The denominator of the experiment. Written by the middleware on `/` only — there is no
+endpoint for it, and nothing the client sends can create one.
+
+| Column | Type | Notes |
+|---|---|---|
+| `anonymous_id` | text PK | same id as `users.anonymous_id`; the PK is what makes the insert idempotent |
+| `variant` | text | `money` / `time` / `discipline` |
+| `is_qa` | boolean, default false | `VERCEL_ENV !== 'production'` or `?variant=` override |
+| `is_bot` | boolean, default false | user-agent heuristic; recorded, never blocked |
+| `utm_source` … `utm_term` | text, nullable | first touch |
+| `landing_path` | text | |
+| `created_at` | timestamptz | first exposure |
+
+**Insert semantics:** `INSERT … ON CONFLICT (anonymous_id) DO NOTHING`. The first variant a
+visitor is assigned is the one that counts for the rest of the experiment, so a returning
+visitor never moves between arms and never inflates the denominator.
+
+**Why a table and not GA4.** The primary metric is conversions ÷ exposures. Conversions are
+exact (a status transition in this database); if exposures came from GA4 they would be
+undercounted by ad blockers and consent, so the rate would be systematically overstated —
+and unevenly across arms if blocking correlates with the audience. The SRM check, whose whole
+job is to detect broken assignment, would be running on the least reliable number available.
+`experiment_exposure` still goes to GA4 (`analytics.md` §4) as the marketing-side mirror;
+this table is the source of truth.
+
+**Write path:** the insert is handed to `ctx.locals.waitUntil()` so the visitor never waits
+for the database (decision D16).
 
 ## Persistence choice
 

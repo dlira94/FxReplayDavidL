@@ -26,8 +26,8 @@ Variant `money`: the full experience (landing → quiz → result) with the risk
 
 - **Unit:** user (`fxr_aid` cookie); assignment sticky for 30 days
 - **Allocation:** ⅓ / ⅓ / ⅓, server-side at the edge (no flicker, no client bias)
-- **Population:** all landing traffic; `is_qa`, internal and bot traffic excluded
-- **Source of truth:** Postgres (exposures logged server-side by middleware; conversions by status transition)
+- **Population:** all landing traffic; rows flagged `is_qa` (non-production: previews, local, `?variant=` overrides) or `is_bot` are excluded
+- **Source of truth:** Postgres. The middleware writes one `exposures` row per visitor (`api.md`), idempotent on `anonymous_id`; conversions are a status transition on `users`. Both sides of the ratio come from the same sink, and `GET /api/stats` serves them
 
 ## Metrics
 

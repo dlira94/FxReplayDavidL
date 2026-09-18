@@ -5,13 +5,16 @@ Analytics is part of the product: every interaction in `experience.md` has an ev
 ## 1. Architecture
 
 ```
-Browser ── track() ──▶ dataLayer ──▶ GTM (deferred) ──▶ GA4          behavioral events
-Server  ── Measurement Protocol ───────────────────────▶ GA4          account_created only
-Server  ── Drizzle ────────────────────────────────────▶ Postgres     source of truth for the funnel
-/dashboard ◀── Postgres                                                live experiment readout
+Browser    ── track() ──▶ dataLayer ──▶ GTM (deferred) ──▶ GA4       behavioral events
+Server     ── Measurement Protocol ────────────────────▶ GA4         account_created only
+Middleware ── waitUntil(insert) ───────────────────────▶ Postgres    exposures  (denominator)
+Server     ── Drizzle ─────────────────────────────────▶ Postgres    users      (numerator)
+/dashboard ◀── GET /api/stats ◀── Postgres                           live experiment readout
 ```
 
 **Why two sinks.** GA4 is where marketing lives: attribution, audiences, ad platform integrations. It is also delayed 24–48 h, applies thresholds at low volume, and loses events to ad blockers. Postgres records every signup step exactly, so the **experiment readout uses Postgres**, and GA4 is reconciled against it (§6).
+
+**Both sides of the ratio come from the same sink.** The primary metric is conversions ÷ exposures. Taking the numerator from Postgres and the denominator from GA4 would overstate the rate by exactly the amount GA4 loses to ad blockers — unevenly across arms, if blocking correlates with the audience. So the middleware writes an `exposures` row (`api.md`) and both numbers come from the database. `experiment_exposure` still fires to GA4 as the marketing-side mirror, and the gap between the two is measured in §6.
 
 **Why GA4 + GTM** (not PostHog / Segment). It's the stack the challenge names and the one marketing teams already operate; GTM lets them add ad pixels without deploys. In production I would evaluate PostHog for experimentation (flags + stats), keeping GA4 for acquisition.
 
@@ -34,7 +37,7 @@ Server  ── Drizzle ───────────────────
 
 | Event | Trigger | Specific properties |
 |---|---|---|
-| `experiment_exposure` | Landing rendered with an assigned variant (once per session) | — |
+| `experiment_exposure` | Landing rendered with an assigned variant (once per session). **GA4 mirror** of the `exposures` row the middleware writes; the table is the source of truth | — |
 | `cta_click` | Any CTA that opens the quiz | `cta_location` (`header`, `hero`, `plan_preview`, `final`) |
 | `plan_preview_view` | Plan preview section ≥ 50 % visible (once) | — |
 | `quiz_start` | Quiz step 1 shown | `entry_cta_location` |
@@ -55,7 +58,7 @@ GA4 automatic `page_view` stays on; enhanced-measurement form events are **disab
 
 | Stage | Event | Metric |
 |---|---|---|
-| Entry | `experiment_exposure` | unique exposed users per variant |
+| Entry | `exposures` table | unique exposed users per variant (`is_qa` / `is_bot` excluded) |
 | Intent | `quiz_start` | start rate = starts ÷ exposed |
 | Engaged | `quiz_step_complete` step 1 (user created) | |
 | Qualified | `quiz_step_complete` step 5 | completion = step 5 ÷ starts |
@@ -63,9 +66,9 @@ GA4 automatic `page_view` stays on; enhanced-measurement form events are **disab
 | **Conversion** | **`account_created`** | email-step conversion = created ÷ step 5 |
 
 **Primary conversion event:** `account_created`
-**Primary metric:** users with `account_created` ÷ unique users with `experiment_exposure`, per variant.
+**Primary metric:** `users` with `status = 'converted'` ÷ rows in `exposures`, per variant — both from Postgres, served by `GET /api/stats`.
 
-Drop-off per step comes from `users.last_step` in Postgres, which also catches users who closed the tab mid-request.
+Drop-off per step comes from `users.last_step` in Postgres, which also catches users who closed the tab mid-request. Everything in this section is exposed as counts by `GET /api/stats` (`api.md`), which is what `/dashboard` and the `growth-analyst` agent read — neither touches PII.
 
 A 409 is not an account creation: the user already had one. It's reported as its own outcome (`signup_email_exists`), not counted as a conversion.
 
@@ -75,16 +78,16 @@ Those records carry status **`email_exists`** (`api.md`), so the dashboard exclu
 
 1. **Typed events.** Event names and property shapes are TypeScript types; a typo doesn't compile.
 2. **Server-side conversion.** `account_created` doesn't depend on the browser, ad blockers or GTM loading. It fires only on the status transition, carries an `event_id` (the user id) and can't fire twice.
-3. **Reconciliation.** Daily: Postgres conversions vs GA4 `account_created`. They should match within ~2 %. Browser events (exposures) will be lower in GA4 because of blockers and consent; that gap is measured, not hidden.
-4. **Sample ratio mismatch check.** Exposures per variant are compared with the expected ⅓ split (chi-square, p < 0.001 = alert). An SRM means assignment or tracking is broken and **invalidates the readout**.
-5. **QA isolation.** Forced variants, preview deployments and internal traffic are flagged and excluded.
+3. **Reconciliation.** Daily: Postgres conversions vs GA4 `account_created`. They should match within ~2 %. GA4 `experiment_exposure` will be lower than the `exposures` table because of blockers and consent; that gap is measured, not hidden, and it is the reason the table exists.
+4. **Sample ratio mismatch check.** Rows in `exposures` per variant are compared with the expected ⅓ split (chi-square, p < 0.001 = alert), computed by `GET /api/stats`. Running this on server-written rows rather than on browser events is the point: an ad blocker must not be able to look like broken assignment. An SRM means assignment is broken and **invalidates the readout**.
+5. **QA isolation.** `is_qa = true` on both `exposures` and `users` whenever `VERCEL_ENV !== 'production'` — previews, local dev — or a `?variant=` override was used. Flagged at write time, excluded from every number in `GET /api/stats`. Nothing that isn't production traffic can reach the readout (decision D18).
 6. **Automated verification.** Playwright e2e runs the quiz and asserts the exact sequence of dataLayer pushes. The `pre-deploy-auditor` agent checks every interactive element has its event.
 7. **No PII.** Enforced in `track()`, plus GA4 enhanced form tracking disabled.
-8. **Bots.** GA4 bot filtering, plus a honeypot field on the quiz; flagged submissions are stored but excluded.
+8. **Bots.** `is_bot` is set from a user-agent heuristic when the exposure is written, and carried to the user record. Bots are recorded, never blocked, and excluded from the readout — plus GA4 bot filtering and a honeypot field on the quiz.
 
 ## 7. Dashboard (`/dashboard`)
 
-Admin-token protected, server-rendered from Postgres:
+Admin-token protected, server-rendered from `GET /api/stats` (counts only, no PII):
 - Conversion per variant with 95 % CI, and delta vs control
 - Funnel per variant (start → step 1…5 → converted), with `email_exists` broken out so drop-off isn't inflated
 - Drop-off by `last_step`
