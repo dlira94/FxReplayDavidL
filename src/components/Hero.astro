@@ -2,7 +2,7 @@
 import type { VariantCopy } from '../content/variants';
 import { SHARED_COPY } from '../content/shared';
 import Cta from './Cta.astro';
-import HeroChart from './HeroChart.astro';
+import SplitMetrics from '../components/hero-visuals/SplitMetrics.astro';
 
 interface Props {
 	copy: VariantCopy;
@@ -11,7 +11,7 @@ interface Props {
 const { copy } = Astro.props;
 ---
 
-<section class="hero">
+<section class="hero" data-hero>
 	<div class="container hero__inner">
 		<div class="hero__copy">
 			<h1 class="hero__headline">{copy.hero.headline}</h1>
@@ -32,9 +32,11 @@ const { copy } = Astro.props;
 		</div>
 
 		<!-- Below the CTA on mobile so the H1 is the LCP and the action stays
-		     above the fold; beside it from 64rem up. -->
+		     above the fold; beside it from 64rem up. Shared across arms: it
+		     answers all three pains at once, so the image is never part of the
+		     experiment. -->
 		<div class="hero__visual">
-			<HeroChart />
+			<SplitMetrics />
 		</div>
 	</div>
 </section>

@@ -56,8 +56,56 @@ import Cta from './Cta.astro';
 	 * rule compiles to a selector that matches nothing and fails silently.
 	 * Kept under .header__inner > so the escape hatch cannot reach further
 	 * than this header. */
+	/* Mobile: hidden while the hero is on screen, shown once it has scrolled
+	 * past (experience.md §1 — sticky with a CTA after the hero). The toggle is
+	 * data-past-hero on <html>, set by the shared observer in the layout.
+	 *
+	 * An animation rather than a transition, because the element also changes
+	 * `display` and transitions do not run across that. */
 	.header__inner > :global(.header__cta) {
 		display: none;
+	}
+
+	:global(html[data-past-hero]) .header__inner > :global(.header__cta) {
+		display: inline-flex;
+		width: auto;
+		min-height: 2.75rem;
+		padding-inline: var(--space-4);
+		font-size: var(--text-sm);
+		/* The label is shared across arms and must not change, so the button
+		   never wraps: the logo gives up its wordmark instead (below). */
+		white-space: nowrap;
+		animation: header-cta-in 220ms ease-out both;
+	}
+
+	/* Once the CTA appears on a phone there is not room for both. The link
+	   keeps its aria-label, so its accessible name is unchanged. */
+	@media (max-width: 47.99rem) {
+		:global(html[data-past-hero]) .header__logo span {
+			display: none;
+		}
+
+		:global(html[data-past-hero]) .header__logo {
+			min-width: 2.75rem;
+			justify-content: center;
+		}
+	}
+
+	@keyframes header-cta-in {
+		from {
+			opacity: 0;
+			transform: translateY(-0.4rem);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		:global(html[data-past-hero]) .header__inner > :global(.header__cta) {
+			animation: none;
+		}
 	}
 
 	@media (min-width: 48rem) {
