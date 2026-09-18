@@ -102,6 +102,29 @@ URL), `og:image` resolves 200 — the 404 the previous audit flagged self-resolv
 predicted — `robots.txt` 200, and `/lab/hero-visual` answers **404**, so the internal review
 page really is absent from production.
 
+### What GTM actually costs, and what Lighthouse shows
+
+Measured on preview `mdf4vvife`, after load:
+
+| Resource | Wire (brotli) | Uncompressed |
+|---|---|---|
+| `gtm.js` | 124 KB | 367 KB |
+| `gtag/js` (GA4 config, pulled in *by* `gtm.js` ~1.15 s later) | 161 KB | 484 KB |
+| **Total** | **~284 KB** | ~850 KB |
+
+Main thread: 68 ms, of which 12 ms blocking.
+
+**Lighthouse does not show all of this, and the 99 should not be read as if it
+did.** Its byte-weight delta with GTM blocked was 118 KB — that is `gtm.js`
+alone. `gtag/js` arrives after Lighthouse stops measuring, so roughly half the
+real post-load payload is outside the score.
+
+It does not touch LCP or TBT — LCP measured 1,655 ms with GTM and 1,874 ms with
+it blocked — because it loads after the page is interactive (D10). But "it does
+not affect the score" and "it is free" are different claims, and only the first
+one is true. Written down here so the trade-off is a decision on record rather
+than a number nobody looked for.
+
 ### Where the numbers go
 
 - Ad-hoc: `pre-deploy-auditor`, which runs Lighthouse against a production build or a preview

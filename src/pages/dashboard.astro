@@ -1,0 +1,523 @@
+---
+export const prerender = false;
+
+import {
+	ADMIN_SESSION_COOKIE,
+	ADMIN_SESSION_MAX_AGE,
+	adminToken,
+	isAuthorised,
+	sessionValue,
+} from '../lib/api/admin';
+import { REQUIRED_PER_ARM, decide, type Decision } from '../lib/decision';
+import { maskEmail } from '../lib/mask';
+import { buildStats, type StatsResponse } from '../lib/stats-query';
+import '../styles/tokens.css';
+import '../styles/scale.css';
+import '../styles/global.css';
+
+/**
+ * Internal funnel dashboard (docs/analytics.md §7).
+ *
+ * Login is a POST form, never a token in the URL: a URL lands in server logs,
+ * in the referer header of anything it links to, and in browser history. The
+ * cookie holds a hash of the token rather than the token, so a stolen cookie
+ * cannot be replayed against the API (D36).
+ */
+
+// Cookie-authenticated and holding masked customer data: `public` would be
+// wrong even with must-revalidate, and the API routes already use no-store.
+Astro.response.headers.set('cache-control', 'private, no-store');
+
+let error: string | null = null;
+let stats: StatsResponse | null = null;
+let decisions = new Map<string, Decision>();
+let signups: Array<{
+	maskedEmail: string;
+	firstName: string | null;
+	variant: string;
+	status: string;
+	lastStep: number;
+	isQa: boolean;
+	createdAt: string;
+}> = [];
+let signupsError: string | null = null;
+
+const includeQa = Astro.url.searchParams.get('include_qa') === 'true';
+const expected = adminToken();
+
+if (Astro.request.method === 'POST') {
+	const form = await Astro.request.formData();
+	const submitted = String(form.get('token') ?? '');
+
+	if (expected && submitted && submitted === expected) {
+		Astro.cookies.set(ADMIN_SESSION_COOKIE, await sessionValue(expected), {
+			path: '/',
+			httpOnly: true,
+			// Strict, not Lax: nothing should ever navigate into this page from
+			// another site carrying the session.
+			sameSite: 'strict',
+			secure: process.env.VERCEL_ENV !== undefined,
+			maxAge: ADMIN_SESSION_MAX_AGE,
+		});
+		return Astro.redirect('/dashboard', 303);
+	}
+
+	error = submitted ? 'That token is not valid.' : 'Enter the admin token.';
+}
+
+const cookie = Astro.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+const authorised = await isAuthorised(Astro.request, cookie);
+
+if (authorised) {
+	try {
+		stats = await buildStats(includeQa);
+
+		const control = stats.variants.find((v) => v.variant === stats!.control)!;
+		for (const v of stats.variants) {
+			decisions.set(
+				v.variant,
+				decide({
+					variant: v.variant,
+					exposures: v.exposures,
+					conversions: v.conversions,
+					controlExposures: control.exposures,
+					controlConversions: control.conversions,
+					srm: stats.srm,
+				}),
+			);
+		}
+	} catch (cause) {
+		console.error('[dashboard] stats query failed', cause);
+		error = 'Could not load the data.';
+	}
+
+	// Consumes the admin API over HTTP rather than calling the query directly:
+	// it keeps GET /api/users a real, exercised contract instead of an endpoint
+	// nothing calls, and it is how a separate front end would read it. Costs
+	// one internal request per dashboard load (D38).
+	try {
+		const response = await fetch(new URL('/api/users?limit=12', Astro.url), {
+			headers: { authorization: `Bearer ${expected}` },
+		});
+		if (response.ok) {
+			const body = (await response.json()) as {
+				users: Array<Record<string, never>>;
+			};
+			signups = body.users
+				.filter((u) => includeQa || !u.isQa)
+				.map((u) => ({
+					// Masked here, on the server. The full address never reaches
+					// the DOM, so a screenshot of this page is not a customer list.
+					maskedEmail: maskEmail(u.email ?? null),
+					firstName: u.firstName ?? null,
+					variant: u.variant,
+					status: u.status,
+					lastStep: u.lastStep,
+					isQa: Boolean(u.isQa),
+					createdAt: u.createdAt,
+				}));
+		} else {
+			signupsError = `The listing answered ${response.status}.`;
+		}
+	} catch (cause) {
+		console.error('[dashboard] signups fetch failed', cause);
+		signupsError = 'Could not reach the listing.';
+	}
+}
+
+const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
+const signed = (n: number) => `${n >= 0 ? '+' : ''}${(n * 100).toFixed(1)}%`;
+const DECISION_LABEL: Record<string, string> = {
+	ship: 'Ship',
+	continue: 'Continue',
+	reject: 'Reject',
+	invalid: 'Invalid',
+};
+const STEP_LABELS: Record<string, string> = {
+	'1': 'name',
+	'2': 'market',
+	'3': 'experience',
+	'4': 'weekly time',
+	'5': 'goal',
+	'6': 'email',
+};
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		{/* Never indexable, in any environment. */}
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Funnel dashboard — FX Replay</title>
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	</head>
+	<body>
+		<main class="dash container">
+			<header class="dash__head">
+				<span class="eyebrow">Internal</span>
+				<h1>Funnel dashboard</h1>
+				{stats && (
+					<p class="dash__meta">
+						{stats.experimentId} · generated{' '}
+						{new Date(stats.generatedAt).toISOString().replace('T', ' ').slice(0, 19)} UTC
+					</p>
+				)}
+			</header>
+
+			{!authorised && (
+				<form class="dash__login" method="POST">
+					<h2 class="dash__login-title">Admin access</h2>
+					<label class="dash__label" for="token">Admin token</label>
+					<input
+						class="dash__input"
+						id="token"
+						name="token"
+						type="password"
+						autocomplete="off"
+						required
+						aria-invalid={error ? 'true' : undefined}
+						aria-describedby={error ? 'login-error' : undefined}
+					/>
+					{error && <p class="dash__error" id="login-error" role="alert">{error}</p>}
+					<button class="dash__submit" type="submit">Sign in</button>
+					<p class="dash__hint">
+						Posted, never placed in the URL — a token in a query string ends up
+						in logs, referer headers and history.
+					</p>
+				</form>
+			)}
+
+			{authorised && error && <p class="dash__error" role="alert">{error}</p>}
+
+			{authorised && stats && (
+				<>
+					<div class="dash__controls">
+						<a
+							class:list={['dash__toggle', !includeQa && 'dash__toggle--on']}
+							href="/dashboard"
+							aria-current={!includeQa ? 'true' : undefined}
+						>
+							Production only
+						</a>
+						<a
+							class:list={['dash__toggle', includeQa && 'dash__toggle--on']}
+							href="/dashboard?include_qa=true"
+							aria-current={includeQa ? 'true' : undefined}
+						>
+							Include QA data
+						</a>
+						<p class="dash__hint dash__hint--inline">
+							{includeQa
+								? 'Showing previews, local traffic and forced variants. Not an experiment readout.'
+								: 'Excluding is_qa and is_bot rows (D18).'}
+						</p>
+					</div>
+
+					<section class="dash__section" aria-labelledby="srm-title">
+						<h2 id="srm-title" class="dash__h2">Data health</h2>
+						<div class:list={['srm', `srm--${stats.srm.status}`]}>
+							<p class="srm__status">
+								{stats.srm.status === 'ok' && 'Sample ratio: OK'}
+								{stats.srm.status === 'alert' && 'Sample ratio mismatch — readout invalid'}
+								{stats.srm.status === 'insufficient_data' && 'Not enough data to check the split'}
+							</p>
+							<p class="srm__detail">
+								χ² = {stats.srm.chiSquare.toFixed(3)} · {stats.srm.degreesOfFreedom} df · p ={' '}
+								{stats.srm.pValue < 0.0001 ? '<0.0001' : stats.srm.pValue.toFixed(4)} ·
+								expected {pct(stats.srm.expectedShare)} per arm · alert below p = 0.001
+							</p>
+						</div>
+					</section>
+
+					<section class="dash__section" aria-labelledby="decision-title">
+						<h2 id="decision-title" class="dash__h2">Decision status</h2>
+						<p class="dash__hint" style="margin-top:0">
+							Rules from docs/experiment.md, applied literally. Required sample:
+							<strong>{REQUIRED_PER_ARM.toLocaleString('en')}</strong> exposed per arm
+							(baseline 3%, MDE +20% relative, 80% power, α = 0.025 Bonferroni-corrected
+							for two comparisons).
+						</p>
+
+						<div class="decisions">
+							{stats.variants.map((v) => {
+								const d = decisions.get(v.variant)!;
+								const pctDone = Math.min(d.sampleProgress, 1) * 100;
+								return (
+									<article class:list={['decision', `decision--${d.status}`]}>
+										<header class="decision__head">
+											<h3 class="decision__variant">
+												{v.variant}
+												{v.variant === stats!.control && <> <span class="tag">control</span></>}
+											</h3>
+											<span class:list={['badge', `badge--${d.status}`]}>
+												{DECISION_LABEL[d.status]}
+											</span>
+										</header>
+
+										<div class="decision__bar" role="img"
+											aria-label={`${Math.round(d.sampleProgress * 100)} percent of the required sample`}>
+											<span style={`width:${pctDone.toFixed(2)}%`}></span>
+										</div>
+										<p class="decision__progress">
+											{v.exposures.toLocaleString('en')} / {REQUIRED_PER_ARM.toLocaleString('en')}
+											{' '}exposed · {Math.round(d.sampleProgress * 100)}%
+										</p>
+
+										<p class="decision__reason">{d.reason}</p>
+									</article>
+								);
+							})}
+						</div>
+
+						{stats.variants.some((v) => !decisions.get(v.variant)!.sampleReached) && (
+							<p class="notice" role="note">
+								<strong>An early lead is not a decision.</strong> Until every arm
+								reaches the required sample, the status stays Continue even when a
+								confidence interval already excludes zero. Stopping on a winner
+								that appeared early is how an A/B test manufactures a result.
+							</p>
+						)}
+					</section>
+
+					<section class="dash__section" aria-labelledby="funnel-title">
+						<h2 id="funnel-title" class="dash__h2">Conversion by variant</h2>
+						<div class="dash__scroll">
+							<table class="table">
+								<thead>
+									<tr>
+										<th scope="col">Variant</th>
+										<th scope="col">Exposed</th>
+										<th scope="col">Quiz starts</th>
+										<th scope="col">Converted</th>
+										<th scope="col">Already had an account</th>
+										<th scope="col">Rate (95% CI)</th>
+										<th scope="col">Lift vs control</th>
+									</tr>
+								</thead>
+								<tbody>
+									{stats.variants.map((v) => (
+										<tr>
+											<th scope="row">
+												{v.variant}
+												{v.variant === stats!.control && <> <span class="tag">control</span></>}
+											</th>
+											<td>{v.exposures.toLocaleString('en')}</td>
+											<td>{v.quizStarts.toLocaleString('en')}</td>
+											<td>{v.conversions.toLocaleString('en')}</td>
+											<td>{v.emailExists.toLocaleString('en')}</td>
+											<td>
+												<strong>{pct(v.conversionRate)}</strong>
+												<span class="muted">
+													{' '}[{pct(v.conversionInterval.low)} – {pct(v.conversionInterval.high)}]
+												</span>
+											</td>
+											<td>
+												{v.lift ? (
+													<>
+														<strong
+															class:list={[v.lift.interval.low > 0 && 'win', v.lift.interval.high < 0 && 'loss']}
+														>
+															{signed(v.lift.relative)}
+														</strong>
+														<span class="muted">
+															{' '}[{signed(v.lift.interval.low)} – {signed(v.lift.interval.high)}]
+														</span>
+													</>
+												) : (
+													<span class="muted">—</span>
+												)}
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+						<p class="dash__hint">
+							Wilson intervals. A lift whose interval crosses 0 is not a result yet —
+							see the decision rules in docs/experiment.md before shipping anything.
+						</p>
+					</section>
+
+					<section class="dash__section" aria-labelledby="signups-title">
+						<h2 id="signups-title" class="dash__h2">Recent signups</h2>
+						{signupsError && <p class="dash__error" role="alert">{signupsError}</p>}
+						{!signupsError && signups.length === 0 && (
+							<p class="dash__hint" style="margin-top:0">No signups in this view yet.</p>
+						)}
+						{signups.length > 0 && (
+							<div class="dash__scroll">
+								<table class="table">
+									<thead>
+										<tr>
+											<th scope="col">When</th>
+											<th scope="col">Email</th>
+											<th scope="col">Variant</th>
+											<th scope="col">Status</th>
+											<th scope="col">Furthest step</th>
+										</tr>
+									</thead>
+									<tbody>
+										{signups.map((u) => (
+											<tr>
+												<td>{u.createdAt.replace('T', ' ').slice(0, 16)}</td>
+												<th scope="row">
+													{u.maskedEmail}
+													{u.isQa && <> <span class="tag">qa</span></>}
+												</th>
+												<td>{u.variant}</td>
+												<td>{u.status}</td>
+												<td>{u.lastStep}</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						)}
+						<p class="dash__hint">
+							Read from <code>GET /api/users</code> with the admin token. Emails are
+							masked on the server, so the full address never reaches this page —
+							not hidden with CSS, not truncated in the browser. Names are not
+							rendered at all.
+						</p>
+					</section>
+
+					<section class="dash__section" aria-labelledby="dropoff-title">
+						<h2 id="dropoff-title" class="dash__h2">Drop-off by step</h2>
+						<div class="dash__scroll">
+							<table class="table">
+								<thead>
+									<tr>
+										<th scope="col">Variant</th>
+										{['1', '2', '3', '4', '5', '6'].map((step) => (
+											<th scope="col">{step}. {STEP_LABELS[step]}</th>
+										))}
+									</tr>
+								</thead>
+								<tbody>
+									{stats.variants.map((v) => (
+										<tr>
+											<th scope="row">{v.variant}</th>
+											{['1', '2', '3', '4', '5', '6'].map((step) => (
+												<td>{(v.dropOffByStep[step] ?? 0).toLocaleString('en')}</td>
+											))}
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+						<p class="dash__hint">
+							Unconverted users by the furthest step they reached. "Already had an
+							account" is counted in its own column above, not here — a 409 is not
+							someone giving up.
+						</p>
+					</section>
+				</>
+			)}
+		</main>
+	</body>
+</html>
+
+<style>
+	.dash { padding-block: var(--space-7); max-width: 78rem; }
+	.dash__head { margin-bottom: var(--space-7); }
+	.dash__head h1 { font-size: var(--text-2xl); }
+	.dash__meta { margin-top: var(--space-2); color: var(--text-secondary); font-size: var(--text-sm); }
+	.dash__h2 { font-size: var(--text-xl); margin-bottom: var(--space-4); }
+	.dash__section { margin-bottom: var(--space-8); }
+
+	.dash__login {
+		max-width: 26rem; padding: var(--space-6);
+		background: var(--card-bg-secondary);
+		border: 1px solid var(--border-brand); border-radius: var(--radius-lg);
+	}
+	.dash__login-title { font-size: var(--text-lg); margin-bottom: var(--space-4); }
+	.dash__label { display: block; margin-bottom: var(--space-2); color: var(--text-secondary); font-size: var(--text-sm); }
+	.dash__input {
+		width: 100%; min-height: 3rem; padding: var(--space-3) var(--space-4);
+		background: var(--bg-primary); border: 1px solid var(--border-secondary);
+		border-radius: var(--radius-md); color: var(--text-primary);
+	}
+	.dash__submit {
+		width: 100%; min-height: 3rem; margin-top: var(--space-4);
+		background: var(--btn-bg-primary-active); color: var(--btn-text);
+		border: 0; border-radius: var(--radius-md);
+		font-weight: var(--weight-emphasis); cursor: pointer;
+	}
+	.dash__error { margin-top: var(--space-3); color: var(--text-error); font-size: var(--text-sm); }
+	.dash__hint { margin-top: var(--space-3); color: var(--text-secondary); font-size: var(--text-sm); max-width: 46rem; }
+	.dash__hint--inline { margin: 0; flex-basis: 100%; }
+
+	.dash__controls {
+		display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3);
+		margin-bottom: var(--space-7);
+	}
+	.dash__toggle {
+		min-height: 2.75rem; display: inline-flex; align-items: center;
+		padding: var(--space-2) var(--space-4);
+		border: 1px solid var(--border-primary); border-radius: var(--radius-full);
+		color: var(--text-secondary); text-decoration: none; font-size: var(--text-sm);
+	}
+	.dash__toggle--on {
+		border-color: var(--border-brand); color: var(--text-primary);
+		background: var(--card-bg-secondary);
+	}
+
+	.dash__scroll { overflow-x: auto; }
+	.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); white-space: nowrap; }
+	.table th, .table td { padding: var(--space-3) var(--space-4); text-align: right; border-bottom: 1px solid var(--border-primary); }
+	.table th[scope='row'], .table thead th:first-child { text-align: left; }
+	.table thead th { color: var(--text-secondary); font-weight: var(--weight-emphasis); }
+	.table td, .table th[scope='row'] { font-variant-numeric: tabular-nums; }
+	.muted { color: var(--text-secondary); }
+	.win { color: var(--text-success); }
+	.loss { color: var(--text-error); }
+	.tag {
+		margin-left: var(--space-2); padding: 0.1rem var(--space-2);
+		border: 1px solid var(--border-secondary); border-radius: var(--radius-full);
+		color: var(--text-secondary); font-size: 0.7rem; text-transform: uppercase;
+	}
+
+	.decisions { display: grid; gap: var(--space-4); margin-top: var(--space-5); }
+	.decision {
+		padding: var(--space-5); border-radius: var(--radius-lg);
+		border: 1px solid var(--border-primary); background: var(--card-bg-secondary);
+	}
+	.decision--ship { border-color: var(--border-success); }
+	.decision--reject { border-color: var(--border-error); }
+	.decision--invalid { border-color: var(--border-error); }
+	.decision__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+	.decision__variant { font-size: var(--text-lg); }
+	.badge {
+		padding: 0.15rem var(--space-3); border-radius: var(--radius-full);
+		border: 1px solid var(--border-secondary); color: var(--text-secondary);
+		font-size: 0.75rem; font-weight: var(--weight-emphasis); text-transform: uppercase;
+	}
+	.badge--ship { border-color: var(--border-success); color: var(--text-success); }
+	.badge--reject, .badge--invalid { border-color: var(--border-error); color: var(--text-error); }
+	.decision__bar {
+		height: 6px; margin-top: var(--space-4); border-radius: var(--radius-full);
+		background: var(--bg-tertiary); overflow: hidden;
+	}
+	.decision__bar > span { display: block; height: 100%; background: var(--border-brand); }
+	.decision__progress {
+		margin-top: var(--space-2); color: var(--text-secondary);
+		font-size: var(--text-sm); font-variant-numeric: tabular-nums;
+	}
+	.decision__reason { margin-top: var(--space-3); font-size: var(--text-sm); }
+	.notice {
+		margin-top: var(--space-5); padding: var(--space-4) var(--space-5);
+		border-left: 2px solid var(--border-brand); background: var(--bg-secondary);
+		font-size: var(--text-sm); max-width: 52rem;
+	}
+	code { font-family: ui-monospace, monospace; font-size: 0.9em; color: var(--text-link); }
+
+	@media (min-width: 60rem) { .decisions { grid-template-columns: repeat(3, 1fr); } }
+
+	.srm { padding: var(--space-4) var(--space-5); border-radius: var(--radius-md); border: 1px solid var(--border-primary); background: var(--bg-secondary); }
+	.srm--ok { border-color: var(--border-success); }
+	.srm--alert { border-color: var(--border-error); }
+	.srm__status { font-weight: var(--weight-emphasis); }
+	.srm__detail { margin-top: var(--space-2); color: var(--text-secondary); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+</style>

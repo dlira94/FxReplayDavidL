@@ -1,5 +1,6 @@
 ---
 import { SHARED_COPY } from '../content/shared';
+import Gtm from '../components/Gtm.astro';
 import { getSiteUrl, isIndexable } from '../lib/site';
 import '../styles/tokens.css';
 import '../styles/scale.css';
@@ -123,6 +124,35 @@ const jsonLd = {
 			(function () {
 				var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
 				var root = document.documentElement;
+				var dl = (window.dataLayer = window.dataLayer || []);
+
+				// ── experiment_exposure ── once per session, on the landing.
+				// It is the denominator's browser-side mirror: the exposures
+				// table is the source of truth (D17), and the gap between the
+				// two is the ad-block rate we measure rather than guess.
+				try {
+					if (!sessionStorage.getItem('fxr_exposed')) {
+						sessionStorage.setItem('fxr_exposed', '1');
+						dl.push({
+							event: 'experiment_exposure',
+							variant: root.dataset.variant || '',
+							experiment_id: 'try_free_pain_v1',
+							is_qa: root.dataset.qa === 'true',
+							page_path: location.pathname
+						});
+					}
+				} catch (e) {
+					// Storage blocked: fire anyway rather than lose the
+					// exposure. A duplicate is recoverable, a missing
+					// denominator is not.
+					dl.push({
+						event: 'experiment_exposure',
+						variant: root.dataset.variant || '',
+						experiment_id: 'try_free_pain_v1',
+						is_qa: root.dataset.qa === 'true',
+						page_path: location.pathname
+					});
+				}
 
 				function show(el) {
 					el.classList.add('is-visible');
@@ -183,10 +213,16 @@ const jsonLd = {
 					var cta = e.target && e.target.closest && e.target.closest('[data-cta-location]');
 					if (!cta) return;
 					var where = cta.getAttribute('data-cta-location');
-					// Read by the island on mount, so quiz_start knows which CTA
-					// opened it without the two needing to talk to each other.
+					// Read by the island on mount. The island cannot listen for
+					// this click itself: it hydrates on client:visible, and the
+					// CTA is above the fold, so the click happens before the
+					// island exists. The flag survives that gap and tells it the
+					// visitor arrived by intent rather than by scrolling past.
 					document.body.dataset.quizEntry = where;
-					(window.dataLayer = window.dataLayer || []).push({
+					if (cta.getAttribute('href') === '#plan') {
+						document.body.dataset.quizIntent = '1';
+					}
+					dl.push({
 						event: 'cta_click',
 						cta_location: where,
 						variant: root.dataset.variant || '',
@@ -208,5 +244,6 @@ const jsonLd = {
 				}
 			})();
 		</script>
+		<Gtm />
 	</body>
 </html>

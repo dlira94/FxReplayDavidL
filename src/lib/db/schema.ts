@@ -70,6 +70,21 @@ export const users = pgTable(
 		landingPath: text('landing_path').notNull(),
 		isQa: boolean('is_qa').notNull().default(false),
 		isBot: boolean('is_bot').notNull().default(false),
+		/**
+		 * GA4 identity, read from the `_ga` / `_ga_*` cookies in the browser.
+		 * Nullable on purpose: GTM loads deferred, so a fast visitor can reach
+		 * step 1 before the cookies exist. A later PATCH fills them in.
+		 */
+		gaClientId: text('ga_client_id'),
+		gaSessionId: text('ga_session_id'),
+		/**
+		 * Stamped when the server-side `account_created` is accepted by GA4.
+		 * The status transition already happens once, but this makes "exactly
+		 * once" a fact in the database rather than a property of control flow.
+		 */
+		accountCreatedSentAt: timestamp('account_created_sent_at', {
+			withTimezone: true,
+		}),
 		editTokenHash: text('edit_token_hash').notNull(),
 		createdAt: timestamp('created_at', { withTimezone: true })
 			.notNull()

@@ -22,6 +22,7 @@ Evaluators care about judgment, trade-offs, measurement and the AI workflow more
 | Event spec, funnel, data quality | `docs/analytics.md` |
 | Hypothesis, metrics, sample size, decision rules | `docs/experiment.md` |
 | Budgets, the `/` on-demand trade-off, fonts | `docs/performance.md` |
+| GTM + GA4 setup, step by step | `docs/gtm-setup.md` |
 | Past decisions — don't relitigate silently | `docs/decisions.md` |
 | Brand tokens | `docs/brand/tokens.css`, `docs/brand/README.md` |
 | AI system: what runs vs what's proposed | `docs/ai-workflow.md` |
