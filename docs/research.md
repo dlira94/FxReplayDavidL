@@ -13,6 +13,10 @@ Desk research conducted Sep 17, 2026. Sources at the bottom. Pain selection is a
 - **Social proof in market:** "Trusted by 1M+ traders" on the homepage; ~600 Trustpilot reviews.
 - **Positioning:** a *practice room*, not a broker, not an automated strategy engine. Educational framing: zero real money involved.
 
+- **Plan tiers and market access** *(third-party source)*: LuxAlgo's platform overview reports three tiers — Beginner (free; 2 sessions, 50 trades per session, one-week retention), Intermediate (≈$17.99/mo), Pro (≈$35/mo; unlimited sessions and retention) — and states that **"the pricing table reserves seconds data and futures/CME access for Pro."**
+  Source: [LuxAlgo, *FX Replay backtesting platform overview*, July 2025](https://www.luxalgo.com/blog/fx-replay-backtesting-platform-overview/).
+  **Caveat:** this is a third party, not FX Replay's own pricing page, and it is from July 2025. It is the basis for the futures line in the practice plan (`decisions.md` D26), so **re-check it against FX Replay's live pricing page before production.** The same source also describes the free tier as *capped* (2 sessions, 50 trades), which is narrower than "free forever" alone implies — worth confirming before any copy leans on free-plan generosity.
+
 **Implication for this challenge:** "Try FX Replay Free" should lead to the **Free plan** (no card). That is the lowest-friction conversion and matches the business objective (account creation), so the landing never mentions a card.
 
 ## 2. Who we're talking to

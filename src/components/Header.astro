@@ -27,8 +27,11 @@ import Cta from './Cta.astro';
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--space-4);
-		min-height: 3.5rem;
+		gap: var(--space-5);
+		/* Roomier than the 3.5rem it was: the CTA is 3rem tall, so the old
+		   header left it 4px of breathing room top and bottom. */
+		min-height: 4.25rem;
+		padding-block: var(--space-3);
 	}
 
 	.header__logo {
@@ -60,6 +63,12 @@ import Cta from './Cta.astro';
 	@media (min-width: 48rem) {
 		.header__inner > :global(.header__cta) {
 			display: inline-flex;
+			/* Slightly shorter and tighter than a section CTA: a navbar button
+			   that matches the hero button competes with it. */
+			width: auto;
+			min-height: 2.75rem;
+			padding-inline: var(--space-5);
+			font-size: var(--text-sm);
 		}
 	}
 </style>

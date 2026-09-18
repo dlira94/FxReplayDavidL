@@ -50,8 +50,20 @@ const {
 			border-color var(--transition-fast);
 	}
 
-	.cta--block {
+	/* Full width on phones: a thumb-width target, and every CTA on the page
+	   reads as the same object instead of three different sizes. */
+	.cta {
 		width: 100%;
+	}
+
+	@media (min-width: 30rem) {
+		.cta {
+			width: auto;
+		}
+
+		.cta--block {
+			width: 100%;
+		}
 	}
 
 	/* Brand blue marks the call to action: where the guide asks you to act (D24). */

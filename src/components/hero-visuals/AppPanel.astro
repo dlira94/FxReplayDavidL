@@ -1,0 +1,69 @@
+---
+/**
+ * Option B — "App panel".
+ *
+ * Frames the chart as the product: a title bar with the instrument, the date
+ * and transport controls, then the chart, then the indicators docked as a
+ * stats row. Reads as a screenshot of something real without being one.
+ */
+import { SHARED_COPY } from '../../content/shared';
+import {
+	BODY_W, CANDLES, GHOSTS, PLAYHEAD_X, TRADE, bodyRect, isUp,
+} from './session';
+
+const indicators = SHARED_COPY.heroIndicators;
+---
+
+<figure class="v" aria-hidden="true">
+	<div class="v__bar">
+		<span class="v__dot"></span>
+		<span class="v__pair">EUR/USD · 1H</span>
+		<span class="v__date">12 Mar 2019</span>
+		<span class="v__transport"><span class="v__play-icon"></span>2×</span>
+	</div>
+
+	<svg class="v__svg" viewBox="0 0 300 130" fill="none" focusable="false">
+		{CANDLES.map((c) => { const { y, height } = bodyRect(c); const s = isUp(c) ? 'var(--success)' : 'var(--error)';
+			return <g><line x1={c.x} y1={c.h} x2={c.x} y2={c.l} stroke={s} stroke-width="1.5" /><rect x={c.x - BODY_W / 2} y={y} width={BODY_W} height={height} rx="1.5" fill={s} /></g>; })}
+		{GHOSTS.map((c) => { const { y, height } = bodyRect(c);
+			return <g opacity="0.4"><line x1={c.x} y1={c.h} x2={c.x} y2={c.l} stroke="var(--dark-400)" stroke-width="1.5" /><rect x={c.x - BODY_W / 2} y={y} width={BODY_W} height={height} rx="1.5" fill="none" stroke="var(--dark-400)" stroke-width="1.5" /></g>; })}
+
+		<g stroke-dasharray="4 3" stroke-width="1.5">
+			<line x1="8" y1={TRADE.target} x2="292" y2={TRADE.target} stroke="var(--success)" />
+			<line x1="8" y1={TRADE.entry} x2="292" y2={TRADE.entry} stroke="var(--border-brand)" />
+			<line x1="8" y1={TRADE.stop} x2="292" y2={TRADE.stop} stroke="var(--error)" />
+		</g>
+		<g font-size="6.5" font-family="var(--font-body)" font-weight="600">
+			<rect x="6" y={TRADE.target - 8} width="34" height="10" rx="2" fill="var(--success)" opacity="0.9" />
+			<text x="9" y={TRADE.target - 0.5} fill="var(--dark-900)">TARGET</text>
+			<rect x="6" y={TRADE.entry - 8} width="30" height="10" rx="2" fill="var(--border-brand)" />
+			<text x="9" y={TRADE.entry - 0.5} fill="var(--neutral-50)">ENTRY</text>
+			<rect x="6" y={TRADE.stop - 8} width="26" height="10" rx="2" fill="var(--error)" />
+			<text x="9" y={TRADE.stop - 0.5} fill="var(--neutral-50)">STOP</text>
+		</g>
+
+		<g class="v__play"><line x1={PLAYHEAD_X} y1="4" x2={PLAYHEAD_X} y2="126" stroke="var(--border-brand)" stroke-width="2" /><rect x={PLAYHEAD_X - 5} y="0" width="10" height="10" rx="3" fill="var(--border-brand)" /></g>
+	</svg>
+
+	<ul class="v__stats">
+		{indicators.map((i) => <li class="v__stat">{i.label}</li>)}
+	</ul>
+</figure>
+
+<style>
+	.v { margin: 0; background: var(--card-bg-secondary); border: 1px solid var(--border-primary); border-radius: var(--radius-lg); overflow: hidden; background-image: radial-gradient(120% 70% at 60% 0%, var(--brand-wash-faint), transparent 70%); }
+	.v__bar { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-primary); font-size: var(--text-sm); color: var(--text-secondary); }
+	.v__dot { width: 0.5rem; height: 0.5rem; border-radius: var(--radius-full); background: var(--border-brand); flex-shrink: 0; }
+	.v__pair { color: var(--text-primary); font-weight: var(--weight-emphasis); }
+	.v__date { margin-left: auto; }
+	.v__transport { display: inline-flex; align-items: center; gap: var(--space-2); padding: 0.1rem var(--space-2); border: 1px solid var(--border-secondary); border-radius: var(--radius-sm); }
+	.v__play-icon { width: 0; height: 0; border-left: 6px solid var(--text-link); border-top: 4px solid transparent; border-bottom: 4px solid transparent; }
+	.v__svg { width: 100%; height: auto; padding: var(--space-4) var(--space-3) var(--space-2); }
+	.v__stats { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--border-primary); }
+	.v__stat { padding: var(--space-3) var(--space-3); font-size: var(--text-sm); font-weight: var(--weight-emphasis); text-align: center; }
+	.v__stat + .v__stat { border-left: 1px solid var(--border-primary); }
+	.v__stat:first-child { color: var(--text-link); }
+	@media (max-width: 30rem) { .v__stats { grid-template-columns: 1fr; } .v__stat + .v__stat { border-left: none; border-top: 1px solid var(--border-primary); } .v__date { display: none; } }
+	@media (prefers-reduced-motion: no-preference) { .v__play { animation: sweep 2.2s ease-out 0.3s both; } }
+	@keyframes sweep { from { transform: translateX(-70px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+</style>

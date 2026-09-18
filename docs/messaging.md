@@ -31,6 +31,16 @@ Source of truth for every word on the page. Components read copy from `src/conte
 | Crypto | BTC/USD and ETH/USD; the market runs 24/7, so weekends count too |
 | Indices / other | Your market's main index, at its opening session |
 
+**Hero visual indicators [shared]** — the hero visual is identical across arms, so it must speak to all three pains at once rather than to the one the variant happens to frame. One indicator per pain:
+
+| Pain | Indicator | Reads as |
+|---|---|---|
+| money | `$0 at risk` | nothing to lose while you learn |
+| time | `3 months replayed in 2 hours` | screen time without the calendar |
+| discipline | `Rules followed: 47/50` | execution you can actually measure |
+
+The trade drawn on the chart is a *simulated* one — entry, stop and target — which is the product doing the thing the copy promises.
+
 **SEO [shared]** — identical across arms on purpose: a title that varied by variant would give search engines whichever arm the crawler happened to be assigned.
 - Title: "Try FX Replay Free — Practice trading on real historical markets"
 - Meta description: "Practice on real historical markets with no money at risk. Answer a few quick questions and get a personalized practice plan. Free forever plan, no credit card."

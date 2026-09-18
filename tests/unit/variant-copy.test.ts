@@ -91,6 +91,9 @@ describe('shared copy mirrors docs/messaging.md', () => {
 	const strings: Array<[string, string]> = [
 		['seo.title', SHARED_COPY.seo.title],
 		['seo.description', SHARED_COPY.seo.description],
+		...SHARED_COPY.heroIndicators.map(
+			(i) => [`heroIndicators.${i.pain}`, i.label] as [string, string],
+		),
 		['primaryCta', SHARED_COPY.primaryCta],
 		['transitionalCta', SHARED_COPY.transitionalCta],
 		['trustLine', SHARED_COPY.trustLine],

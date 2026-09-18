@@ -21,6 +21,18 @@ export const SHARED_COPY = {
 			'Practice on real historical markets with no money at risk. Answer a few quick questions and get a personalized practice plan. Free forever plan, no credit card.',
 	},
 
+	/**
+	 * The hero visual is shared across arms, so it speaks to all three pains at
+	 * once: one indicator each for money, time and discipline. A visual that
+	 * only answered the variant's pain would make the image part of the
+	 * experiment, and the experiment is copy-only.
+	 */
+	heroIndicators: [
+		{ pain: 'money', label: '$0 at risk' },
+		{ pain: 'time', label: '3 months replayed in 2 hours' },
+		{ pain: 'discipline', label: 'Rules followed: 47/50' },
+	],
+
 	/** Identical across arms on purpose: the test isolates the pain framing. */
 	primaryCta: 'Build my free practice plan',
 	transitionalCta: 'See a sample plan',

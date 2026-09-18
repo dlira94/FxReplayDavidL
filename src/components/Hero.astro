@@ -74,13 +74,15 @@ const { copy } = Astro.props;
 		font-size: var(--text-sm);
 	}
 
-	@media (min-width: 30rem) {
+	/* Stacked on phones (both full width), side by side once the viewport can
+	   hold two targets without shrinking either. */
+	@media (min-width: 40rem) {
 		.hero__actions {
 			flex-direction: row;
 			flex-wrap: wrap;
 		}
 
-		.hero__actions :global(.cta) {
+		.hero__actions > :global(.cta) {
 			width: auto;
 		}
 	}
