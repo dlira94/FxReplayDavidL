@@ -111,6 +111,17 @@ export default function Quiz({
 	 * line lower.
 	 */
 	const programmaticFocus = useRef(false);
+	/**
+	 * The island hydrates on `client:visible`, so it mounts when the section
+	 * scrolls into view — not when anyone asks for it. Moving focus then steals
+	 * it from someone who is just reading: on a phone it opens the keyboard and
+	 * jerks the scroll, and a keyboard user loses their place in the page.
+	 *
+	 * So focus only moves on arrival by intent, or on a step change during a
+	 * session the visitor is already in (D44).
+	 */
+	const arrivedByIntent = useRef(false);
+	const firstStepRender = useRef(true);
 	/** Steps 2-5 save in the background; a failure is retried, not shown. */
 	const backlog = useRef<Record<string, unknown>>({});
 
@@ -145,23 +156,36 @@ export default function Quiz({
 		writeSaved({ step, answers, userId });
 	}, [step, answers, userId, done]);
 
-	// Focus the new step's heading so a screen reader announces it and a
-	// keyboard user lands inside the step rather than back at the top.
+	/**
+	 * Focus the step's heading so a screen reader announces it, and on a
+	 * single-input step the field itself, so a keyboard user lands where the
+	 * work is rather than at the top of the page.
+	 */
+	const focusStep = useCallback(() => {
+		headingRef.current?.focus();
+		if (definition.kind === 'choice') return;
+		window.setTimeout(() => {
+			// A focus we caused is not intent; markQuizStart must ignore it.
+			programmaticFocus.current = true;
+			inputRef.current?.focus();
+			window.setTimeout(() => {
+				programmaticFocus.current = false;
+			}, 0);
+		}, 60);
+	}, [definition.kind]);
+
 	useEffect(() => {
 		if (done) return;
-		headingRef.current?.focus();
-		if (definition.kind !== 'choice') {
-			// A text or email step: put the cursor where the work is.
-			window.setTimeout(() => {
-				programmaticFocus.current = true;
-				inputRef.current?.focus();
-				// Cleared after the focus event has been dispatched.
-				window.setTimeout(() => {
-					programmaticFocus.current = false;
-				}, 0);
-			}, 60);
+
+		if (firstStepRender.current) {
+			firstStepRender.current = false;
+			// Mounted because the section scrolled into view: leave focus alone.
+			// A CTA click calls focusStep() directly instead.
+			if (!arrivedByIntent.current) return;
 		}
-	}, [step, done, definition.kind]);
+
+		focusStep();
+	}, [step, done, focusStep]);
 
 	/**
 	 * `quiz_start` means someone decided to start, not that the section
@@ -194,6 +218,18 @@ export default function Quiz({
 		});
 	}, []);
 
+	// A CTA clicked *before* this island existed leaves a flag on <body>; the
+	// island cannot have heard that click itself.
+	useEffect(() => {
+		if (document.body.dataset.quizIntent !== '1') return;
+		delete document.body.dataset.quizIntent;
+		arrivedByIntent.current = true;
+		markQuizStart(
+			(document.body.dataset.quizEntry as CtaLocation | undefined) ?? 'hero',
+		);
+		window.setTimeout(focusStep, 120);
+	}, [markQuizStart, focusStep]);
+
 	useEffect(() => {
 		const onCtaClick = (event: Event) => {
 			const target = event.target as HTMLElement | null;
@@ -203,10 +239,15 @@ export default function Quiz({
 			// The transitional CTA scrolls to the plan preview, not the quiz.
 			if (cta.getAttribute('href') !== '#plan') return;
 			markQuizStart(where);
+			// Arriving by CTA *is* asking to start, so this is the one case
+			// where taking focus is what the visitor wanted. The step effect
+			// will not fire — the step has not changed — so do it here.
+			arrivedByIntent.current = true;
+			window.setTimeout(focusStep, 120);
 		};
 		document.addEventListener('click', onCtaClick);
 		return () => document.removeEventListener('click', onCtaClick);
-	}, [markQuizStart]);
+	}, [markQuizStart, focusStep]);
 
 	const flushBacklog = useCallback(
 		async (id: string) => {

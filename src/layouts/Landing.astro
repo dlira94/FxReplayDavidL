@@ -213,9 +213,15 @@ const jsonLd = {
 					var cta = e.target && e.target.closest && e.target.closest('[data-cta-location]');
 					if (!cta) return;
 					var where = cta.getAttribute('data-cta-location');
-					// Read by the island on mount, so quiz_start knows which CTA
-					// opened it without the two needing to talk to each other.
+					// Read by the island on mount. The island cannot listen for
+					// this click itself: it hydrates on client:visible, and the
+					// CTA is above the fold, so the click happens before the
+					// island exists. The flag survives that gap and tells it the
+					// visitor arrived by intent rather than by scrolling past.
 					document.body.dataset.quizEntry = where;
+					if (cta.getAttribute('href') === '#plan') {
+						document.body.dataset.quizIntent = '1';
+					}
 					dl.push({
 						event: 'cta_click',
 						cta_location: where,

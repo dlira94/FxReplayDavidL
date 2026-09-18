@@ -238,6 +238,52 @@ test.describe('the interface', () => {
 		await expect(page.locator('.quiz__count')).toHaveText('Step 3 of 6');
 	});
 
+	test('does not take focus when the island mounts by scrolling', async ({
+		page,
+	}) => {
+		// The island hydrates on client:visible, so it mounts when the section
+		// scrolls into view. Focusing then steals focus from someone who is
+		// just reading: on a phone it opens the keyboard and jerks the scroll,
+		// and a keyboard user loses their place (D44).
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto('/?variant=money');
+		await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+
+		await page.locator('#plan').scrollIntoViewIfNeeded();
+		await expect(page.locator('.quiz__input')).toBeVisible();
+		await page.waitForTimeout(1200);
+
+		// Mounted, and focus never moved off the body.
+		await expect(page.locator('.quiz__input')).not.toBeFocused();
+		const activeTag = await page.evaluate(
+			() => document.activeElement?.tagName ?? '',
+		);
+		expect(activeTag).toBe('BODY');
+	});
+
+	test('takes focus when the visitor arrives by clicking a CTA', async ({
+		page,
+	}) => {
+		// Arriving by CTA is asking to start, so this is the one case where
+		// taking focus is what the visitor wanted. The island cannot hear that
+		// click itself - it hydrates later - so the inline script leaves a flag.
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto('/?variant=money');
+		await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+
+		await page.locator('a.cta--primary:visible').first().click();
+
+		await expect(page.locator('.quiz__input')).toBeFocused();
+		await expect
+			.poll(() =>
+				page.evaluate(
+					() =>
+						(window.dataLayer ?? []).filter((e) => e.event === 'quiz_start').length,
+				),
+			)
+			.toBe(1);
+	});
+
 	test('does not fire quiz_start just because the quiz scrolled into view', async ({
 		page,
 	}) => {

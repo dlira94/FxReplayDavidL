@@ -87,7 +87,7 @@ Variant affects only the framing (title, lead). The plan logic is identical, so 
 
 - Semantic landmarks (`header`, `main`, `section` with headings, `footer`); one `h1`
 - Choice steps are a native `fieldset` + radio group styled as cards (keyboard and screen reader for free)
-- Focus moves to each new step's heading; live region announces "Step 3 of 6". **Exception:** the two single-input steps (1 and 6) focus the input instead — on a step with one field, landing on the heading only to make the visitor Tab once is friction, and the live region still announces the change
+- Focus moves to each new step's heading; live region announces "Step 3 of 6". **The quiz never takes focus on mount** — the island hydrates on scroll, and grabbing focus there opens the keyboard on a phone and throws a keyboard user out of their place (D44). Focus moves only on arrival by CTA, or on a step change once the visitor is in the quiz. **Exception:** the two single-input steps (1 and 6) focus the input instead — on a step with one field, landing on the heading only to make the visitor Tab once is friction, and the live region still announces the change
 - Visible focus ring using `--border-brand`; targets ≥ 44 px
 - Brand blue not used for small text (contrast); `prefers-reduced-motion` respected
 - Errors are announced (`role="alert"`) and never conveyed by color alone
