@@ -15,6 +15,7 @@ import Outcome from '../components/Outcome.astro';
 import PlanPreview from '../components/PlanPreview.astro';
 import Problem from '../components/Problem.astro';
 import SocialProof from '../components/SocialProof.astro';
+import Testimonials from '../components/Testimonials.astro';
 import { getVariantCopy } from '../content/variants';
 import Landing from '../layouts/Landing.astro';
 import { CONTROL_VARIANT } from '../lib/variants';
@@ -38,6 +39,7 @@ const copy = getVariantCopy(variant);
 		<PlanPreview copy={copy} />
 		<HowItWorks />
 		<Outcome />
+		<Testimonials />
 		<Faq />
 		<FinalCta copy={copy} />
 

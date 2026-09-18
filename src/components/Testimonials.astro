@@ -1,0 +1,114 @@
+---
+import { SHARED_COPY } from '../content/shared';
+import IconQuote from './icons/IconQuote.astro';
+---
+
+<section class="section" aria-labelledby="testimonials-title">
+	<div class="container">
+		<div class="tst__head reveal">
+			<IconQuote />
+			<h2 id="testimonials-title" class="section-title">
+				What practice actually changes
+			</h2>
+		</div>
+
+		<!-- A scroll-snap rail on phones and a grid from 48rem. No JS: the
+		     browser already knows how to scroll, and a carousel script would be
+		     the only thing on this page that could break. -->
+		<!-- The reveal sits on the rail, not on each card: a card scrolled out of
+		     the horizontal rail never intersects the viewport, so a per-card
+		     reveal would leave it stuck at opacity 0 until someone swiped. -->
+		<ul class="tst reveal" data-reveal="60" role="list">
+			{
+				SHARED_COPY.testimonials.map((t) => (
+					<li class="tst__card">
+						{/* Visible on the card, not in a footnote: a disclaimer you
+						    have to go looking for is one designed not to be found. */}
+						<p class="tst__label">{SHARED_COPY.testimonialLabel}</p>
+						<blockquote class="tst__quote">
+							<p>{t.quote}</p>
+						</blockquote>
+						<p class="tst__by">{t.attribution}</p>
+					</li>
+				))
+			}
+		</ul>
+	</div>
+</section>
+
+<style>
+	.tst__head {
+		text-align: center;
+		margin-bottom: var(--space-7);
+	}
+
+	.tst__head :global(.icon) {
+		margin: 0 auto var(--space-3);
+	}
+
+	.tst {
+		display: grid;
+		grid-auto-flow: column;
+		grid-auto-columns: minmax(17rem, 78%);
+		gap: var(--space-4);
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		/* Bleed to the viewport edge so the next card peeks and the rail reads
+		   as scrollable without a scrollbar or an arrow. */
+		margin-inline: calc(var(--gutter) * -1);
+		padding-inline: var(--gutter);
+		padding-bottom: var(--space-3);
+		scrollbar-width: none;
+	}
+
+	.tst::-webkit-scrollbar {
+		display: none;
+	}
+
+	.tst__card {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+		padding: var(--space-5);
+		background: var(--card-bg-secondary);
+		border: 1px solid var(--border-primary);
+		border-radius: var(--radius-lg);
+		scroll-snap-align: start;
+	}
+
+	.tst__label {
+		align-self: flex-start;
+		padding: 0.15rem var(--space-3);
+		background: var(--bg-primary);
+		border: 1px solid var(--border-secondary);
+		border-radius: var(--radius-full);
+		color: var(--text-secondary);
+		font-size: 0.75rem;
+		font-weight: var(--weight-emphasis);
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.tst__quote {
+		margin: 0;
+		font-size: var(--text-lg);
+	}
+
+	.tst__by {
+		margin-top: auto;
+		color: var(--text-secondary);
+		font-size: var(--text-sm);
+	}
+
+	@media (min-width: 48rem) {
+		.tst {
+			grid-auto-flow: row;
+			grid-template-columns: repeat(3, 1fr);
+			gap: var(--space-5);
+			overflow: visible;
+			margin-inline: 0;
+			padding-inline: 0;
+			padding-bottom: 0;
+		}
+	}
+</style>
