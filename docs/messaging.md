@@ -13,7 +13,7 @@ Source of truth for every word on the page. Components read copy from `src/conte
 | Hero | A discretionary trader who wants to get better without risking money |
 | Guide: empathy | "We've been there: learning the hard way is expensive." |
 | Guide: authority | Trusted by 1M+ traders · replay real historical markets · journal, analytics and AI mentor built in |
-| Plan | 1. Answer 4 quick questions → 2. Get your personalized practice plan → 3. Start practicing free |
+| Plan | 1. Answer a few quick questions → 2. Get your personalized practice plan → 3. Start practicing free |
 | Primary CTA | **Build my free practice plan** |
 | Transitional CTA | "See a sample plan" (scrolls to the plan preview) |
 | Success | Walk into the live market with reps, data and a routine behind every decision |
@@ -110,6 +110,26 @@ Question text is **[shared]**; the one-line helper under each question is **[var
 | 6 | Email | Creates your free account and saves your plan. | (same) | (same) |
 
 **Consent line (email step, shared):** "By continuing you'll create a free FX Replay account. No credit card. We won't share your email."
+
+## Copy tokens
+
+Copy strings may contain `{token}` placeholders, replaced at render time from the user's answers. A slot that has no answer yet never renders — the tokens only appear on the result screen, after every step is filled.
+
+| Token | Source | Rendered as |
+|---|---|---|
+| `{name}` | step 1, free text | The name as typed, trimmed. Escaped on render |
+| `{hours}` | step 4, `weekly_hours` enum | The range label below, not the raw enum value |
+
+**`{hours}` mapping** — one label per option, phrased to read naturally inside "… into {hours} a week":
+
+| Option (step 4) | Stored value | Renders as |
+|---|---|---|
+| < 2 h | `lt_2` | less than 2 hours |
+| 2–5 h | `2_5` | 2–5 hours |
+| 5–10 h | `5_10` | 5–10 hours |
+| 10+ h | `10_plus` | 10+ hours |
+
+The labels are shared across variants: only the sentence around the token is `[variant]`. The mapping lives with the plan logic in `src/lib/plan.ts` and is unit-tested, so a new option can't ship without a label.
 
 ## Copy guardrails
 

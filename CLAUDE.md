@@ -32,7 +32,7 @@ If a task conflicts with these docs, **stop and ask** rather than guessing.
 
 ## Stack
 
-Astro 7 (static by default) · TypeScript strict · React only for the quiz island · plain CSS with brand tokens (no Tailwind) · Zod · Drizzle + Neon Postgres · Vercel adapter · GTM + GA4 · Vitest · Playwright · Node 22 (`.nvmrc`)
+Astro 7 (static by default) · TypeScript strict · React only for the quiz island · plain CSS with brand tokens (no Tailwind) · Zod · Drizzle + Neon Postgres · Vercel adapter · GTM + GA4 · Vitest · Playwright · GitHub Actions · Node 22 (`.nvmrc`)
 
 Astro 7 is newer than most training data. **Check the installed version's docs before using an API from memory** (config, adapters, middleware, actions, fonts). Record anything surprising in `docs/decisions.md`.
 

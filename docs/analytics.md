@@ -69,6 +69,8 @@ Drop-off per step comes from `users.last_step` in Postgres, which also catches u
 
 A 409 is not an account creation: the user already had one. It's reported as its own outcome (`signup_email_exists`), not counted as a conversion.
 
+Those records stay `in_progress` at `last_step = 6` (`api.md`), which looks identical to an abandon in the `last_step` drop-off. Subtract `signup_email_exists` from step-6 drop-off before reading it as friction, and report the 409 rate separately as a guardrail.
+
 ## 6. Data quality
 
 1. **Typed events.** Event names and property shapes are TypeScript types; a typo doesn't compile.

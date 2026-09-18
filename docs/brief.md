@@ -46,7 +46,7 @@ Selection rationale: `research.md` §7. Copy: `messaging.md`.
 
 ## Stack
 
-Astro · TypeScript (strict) · React island for the quiz · Zod · Drizzle + Neon Postgres · Vercel (static + serverless functions + edge middleware) · GTM + GA4 · Playwright · GitHub Actions
+Astro · TypeScript (strict) · React island for the quiz · Zod · Drizzle + Neon Postgres · Vercel (static + serverless functions + edge middleware) · GTM + GA4 · Vitest · Playwright · GitHub Actions
 
 ## Constraints
 

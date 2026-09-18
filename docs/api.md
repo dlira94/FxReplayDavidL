@@ -62,7 +62,9 @@ Called at steps 2–6. Partial body; any subset of:
 - Requires the `fxr_edit` cookie matching this user → otherwise `401`. Nobody can edit a user by guessing an id.
 - When `email` is present and valid: status → `converted`, `convertedAt` set, and the server sends `account_created` to GA4 via Measurement Protocol (fire-and-forget; failure is logged, never fails the request).
 - Converting twice is a no-op (`200`, no second GA4 event).
-- `409 email_taken` if another converted user has the email.
+- `409 email_taken` if another converted user has the email. The record stays `in_progress`
+  with `last_step = 6`, the email is not stored on it, and no `account_created` is sent —
+  so a 409 is never a conversion and never overwrites the existing user.
 
 `200 OK` → `{ "user": { … } }`
 
