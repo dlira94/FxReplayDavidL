@@ -76,6 +76,32 @@ LCP lands at 1.3–1.7 s, so the trade-off is affordable at this page weight. St
 not the worst case**: every sample hit a warm instance. Read p75/p95 from the Vercel
 dashboard after an idle period before treating any of this as the ceiling.
 
+### Measured — **production**, 2026-09-18
+
+The preview numbers below were always caveated with "SEO should read 100 in production,
+but that is inference from the code path". Measured, it does.
+
+| Metric | Production | Preview `e3yi11pms` |
+|---|---|---|
+| Performance | **100** | 99–100 |
+| Accessibility | **100** | 100 |
+| Best Practices | **100** | 100 |
+| **SEO** | **100 — zero failing audits** | 69 (`is-crawlable` only, by design) |
+| LCP | **1.1 s** | 1.5–1.7 s |
+| CLS | **0** | 0 |
+| TBT | **0 ms** | 0 ms |
+| FCP | 1.0 s | — |
+| `server-response-time` | **70 ms** | 63 ms |
+
+Production is faster than preview on LCP, which is expected: the preview injects Vercel's
+toolbar and the production deployment is not carrying it.
+
+Indexability confirmed at the same time: **no `x-robots-tag` header, no `<meta name="robots">`**,
+canonical is **self-referential** (`https://fxreplaydavidlira.vercel.app/` served at that
+URL), `og:image` resolves 200 — the 404 the previous audit flagged self-resolved on merge, as
+predicted — `robots.txt` 200, and `/lab/hero-visual` answers **404**, so the internal review
+page really is absent from production.
+
 ### Where the numbers go
 
 - Ad-hoc: `pre-deploy-auditor`, which runs Lighthouse against a production build or a preview
