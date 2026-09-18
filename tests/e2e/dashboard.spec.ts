@@ -84,6 +84,46 @@ test.describe('dashboard access', () => {
 		);
 	});
 
+	test('shows sample progress and holds Continue until the sample is reached', async ({
+		page,
+	}) => {
+		await page.goto('/dashboard');
+		await page.locator('#token').fill(TOKEN!);
+		await page.locator('.dash__submit').click();
+
+		await expect(page.locator('.decision')).toHaveCount(3);
+		await expect(page.locator('.decision__progress').first()).toContainText(
+			'/ 16,900',
+		);
+
+		// The rule that exists to stop us: nothing ships on a partial sample.
+		// Scoped to the decision cards: `.badge` alone would also pick up any
+		// badge added elsewhere on the page later.
+		await expect(page.locator('.decision .badge')).toHaveCount(3);
+		const badges = await page.locator('.decision .badge').allTextContents();
+		expect(badges.every((b) => b.trim() === 'Continue')).toBe(true);
+		await expect(page.locator('.notice')).toContainText(
+			'An early lead is not a decision',
+		);
+	});
+
+	test('masks emails server-side and never renders a name', async ({ page }) => {
+		await page.goto('/dashboard?include_qa=true');
+		await page.locator('#token').fill(TOKEN!);
+		await page.locator('.dash__submit').click();
+		await page.goto('/dashboard?include_qa=true');
+
+		await expect(page.locator('#signups-title')).toBeVisible();
+
+		const html = await page.content();
+		// A screenshot of this page must not be a customer list, so the full
+		// address is never in the DOM to begin with.
+		expect(html).not.toMatch(/demo-\w+-\d+@example\.com/);
+		expect(html).toMatch(/\w\*+@/);
+		// Names are not rendered at all.
+		expect(html).not.toMatch(/>\s*Demo\s*</);
+	});
+
 	test('keeps the session across a reload', async ({ page }) => {
 		await page.goto('/dashboard');
 		await page.locator('#token').fill(TOKEN!);

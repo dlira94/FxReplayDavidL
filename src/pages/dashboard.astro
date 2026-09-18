@@ -8,6 +8,8 @@ import {
 	isAuthorised,
 	sessionValue,
 } from '../lib/api/admin';
+import { REQUIRED_PER_ARM, decide, type Decision } from '../lib/decision';
+import { maskEmail } from '../lib/mask';
 import { buildStats, type StatsResponse } from '../lib/stats-query';
 import '../styles/tokens.css';
 import '../styles/scale.css';
@@ -24,6 +26,17 @@ import '../styles/global.css';
 
 let error: string | null = null;
 let stats: StatsResponse | null = null;
+let decisions = new Map<string, Decision>();
+let signups: Array<{
+	maskedEmail: string;
+	firstName: string | null;
+	variant: string;
+	status: string;
+	lastStep: number;
+	isQa: boolean;
+	createdAt: string;
+}> = [];
+let signupsError: string | null = null;
 
 const includeQa = Astro.url.searchParams.get('include_qa') === 'true';
 const expected = adminToken();
@@ -54,14 +67,68 @@ const authorised = await isAuthorised(Astro.request, cookie);
 if (authorised) {
 	try {
 		stats = await buildStats(includeQa);
+
+		const control = stats.variants.find((v) => v.variant === stats!.control)!;
+		for (const v of stats.variants) {
+			decisions.set(
+				v.variant,
+				decide({
+					variant: v.variant,
+					exposures: v.exposures,
+					conversions: v.conversions,
+					controlExposures: control.exposures,
+					controlConversions: control.conversions,
+					srm: stats.srm,
+				}),
+			);
+		}
 	} catch (cause) {
 		console.error('[dashboard] stats query failed', cause);
 		error = 'Could not load the data.';
+	}
+
+	// Consumes the admin API over HTTP rather than calling the query directly:
+	// it keeps GET /api/users a real, exercised contract instead of an endpoint
+	// nothing calls, and it is how a separate front end would read it. Costs
+	// one internal request per dashboard load (D38).
+	try {
+		const response = await fetch(new URL('/api/users?limit=12', Astro.url), {
+			headers: { authorization: `Bearer ${expected}` },
+		});
+		if (response.ok) {
+			const body = (await response.json()) as {
+				users: Array<Record<string, never>>;
+			};
+			signups = body.users
+				.filter((u) => includeQa || !u.isQa)
+				.map((u) => ({
+					// Masked here, on the server. The full address never reaches
+					// the DOM, so a screenshot of this page is not a customer list.
+					maskedEmail: maskEmail(u.email ?? null),
+					firstName: u.firstName ?? null,
+					variant: u.variant,
+					status: u.status,
+					lastStep: u.lastStep,
+					isQa: Boolean(u.isQa),
+					createdAt: u.createdAt,
+				}));
+		} else {
+			signupsError = `The listing answered ${response.status}.`;
+		}
+	} catch (cause) {
+		console.error('[dashboard] signups fetch failed', cause);
+		signupsError = 'Could not reach the listing.';
 	}
 }
 
 const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${(n * 100).toFixed(1)}%`;
+const DECISION_LABEL: Record<string, string> = {
+	ship: 'Ship',
+	continue: 'Continue',
+	reject: 'Reject',
+	invalid: 'Invalid',
+};
 const STEP_LABELS: Record<string, string> = {
 	'1': 'name',
 	'2': 'market',
@@ -160,6 +227,56 @@ const STEP_LABELS: Record<string, string> = {
 						</div>
 					</section>
 
+					<section class="dash__section" aria-labelledby="decision-title">
+						<h2 id="decision-title" class="dash__h2">Decision status</h2>
+						<p class="dash__hint" style="margin-top:0">
+							Rules from docs/experiment.md, applied literally. Required sample:
+							<strong>{REQUIRED_PER_ARM.toLocaleString('en')}</strong> exposed per arm
+							(baseline 3%, MDE +20% relative, 80% power, α = 0.025 Bonferroni-corrected
+							for two comparisons).
+						</p>
+
+						<div class="decisions">
+							{stats.variants.map((v) => {
+								const d = decisions.get(v.variant)!;
+								const pctDone = Math.min(d.sampleProgress, 1) * 100;
+								return (
+									<article class:list={['decision', `decision--${d.status}`]}>
+										<header class="decision__head">
+											<h3 class="decision__variant">
+												{v.variant}
+												{v.variant === stats!.control && <span class="tag">control</span>}
+											</h3>
+											<span class:list={['badge', `badge--${d.status}`]}>
+												{DECISION_LABEL[d.status]}
+											</span>
+										</header>
+
+										<div class="decision__bar" role="img"
+											aria-label={`${Math.round(d.sampleProgress * 100)} percent of the required sample`}>
+											<span style={`width:${pctDone.toFixed(2)}%`}></span>
+										</div>
+										<p class="decision__progress">
+											{v.exposures.toLocaleString('en')} / {REQUIRED_PER_ARM.toLocaleString('en')}
+											{' '}exposed · {Math.round(d.sampleProgress * 100)}%
+										</p>
+
+										<p class="decision__reason">{d.reason}</p>
+									</article>
+								);
+							})}
+						</div>
+
+						{stats.variants.some((v) => !decisions.get(v.variant)!.sampleReached) && (
+							<p class="notice" role="note">
+								<strong>An early lead is not a decision.</strong> Until every arm
+								reaches the required sample, the status stays Continue even when a
+								confidence interval already excludes zero. Stopping on a winner
+								that appeared early is how an A/B test manufactures a result.
+							</p>
+						)}
+					</section>
+
 					<section class="dash__section" aria-labelledby="funnel-title">
 						<h2 id="funnel-title" class="dash__h2">Conversion by variant</h2>
 						<div class="dash__scroll">
@@ -216,6 +333,49 @@ const STEP_LABELS: Record<string, string> = {
 						<p class="dash__hint">
 							Wilson intervals. A lift whose interval crosses 0 is not a result yet —
 							see the decision rules in docs/experiment.md before shipping anything.
+						</p>
+					</section>
+
+					<section class="dash__section" aria-labelledby="signups-title">
+						<h2 id="signups-title" class="dash__h2">Recent signups</h2>
+						{signupsError && <p class="dash__error" role="alert">{signupsError}</p>}
+						{!signupsError && signups.length === 0 && (
+							<p class="dash__hint" style="margin-top:0">No signups in this view yet.</p>
+						)}
+						{signups.length > 0 && (
+							<div class="dash__scroll">
+								<table class="table">
+									<thead>
+										<tr>
+											<th scope="col">When</th>
+											<th scope="col">Email</th>
+											<th scope="col">Variant</th>
+											<th scope="col">Status</th>
+											<th scope="col">Furthest step</th>
+										</tr>
+									</thead>
+									<tbody>
+										{signups.map((u) => (
+											<tr>
+												<td>{u.createdAt.replace('T', ' ').slice(0, 16)}</td>
+												<th scope="row">
+													{u.maskedEmail}
+													{u.isQa && <span class="tag">qa</span>}
+												</th>
+												<td>{u.variant}</td>
+												<td>{u.status}</td>
+												<td>{u.lastStep}</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						)}
+						<p class="dash__hint">
+							Read from <code>GET /api/users</code> with the admin token. Emails are
+							masked on the server, so the full address never reaches this page —
+							not hidden with CSS, not truncated in the browser. Names are not
+							rendered at all.
 						</p>
 					</section>
 
@@ -314,6 +474,42 @@ const STEP_LABELS: Record<string, string> = {
 		border: 1px solid var(--border-secondary); border-radius: var(--radius-full);
 		color: var(--text-secondary); font-size: 0.7rem; text-transform: uppercase;
 	}
+
+	.decisions { display: grid; gap: var(--space-4); margin-top: var(--space-5); }
+	.decision {
+		padding: var(--space-5); border-radius: var(--radius-lg);
+		border: 1px solid var(--border-primary); background: var(--card-bg-secondary);
+	}
+	.decision--ship { border-color: var(--border-success); }
+	.decision--reject { border-color: var(--border-error); }
+	.decision--invalid { border-color: var(--border-error); }
+	.decision__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+	.decision__variant { font-size: var(--text-lg); }
+	.badge {
+		padding: 0.15rem var(--space-3); border-radius: var(--radius-full);
+		border: 1px solid var(--border-secondary); color: var(--text-secondary);
+		font-size: 0.75rem; font-weight: var(--weight-emphasis); text-transform: uppercase;
+	}
+	.badge--ship { border-color: var(--border-success); color: var(--text-success); }
+	.badge--reject, .badge--invalid { border-color: var(--border-error); color: var(--text-error); }
+	.decision__bar {
+		height: 6px; margin-top: var(--space-4); border-radius: var(--radius-full);
+		background: var(--bg-tertiary); overflow: hidden;
+	}
+	.decision__bar > span { display: block; height: 100%; background: var(--border-brand); }
+	.decision__progress {
+		margin-top: var(--space-2); color: var(--text-secondary);
+		font-size: var(--text-sm); font-variant-numeric: tabular-nums;
+	}
+	.decision__reason { margin-top: var(--space-3); font-size: var(--text-sm); }
+	.notice {
+		margin-top: var(--space-5); padding: var(--space-4) var(--space-5);
+		border-left: 2px solid var(--border-brand); background: var(--bg-secondary);
+		font-size: var(--text-sm); max-width: 52rem;
+	}
+	code { font-family: ui-monospace, monospace; font-size: 0.9em; color: var(--text-link); }
+
+	@media (min-width: 60rem) { .decisions { grid-template-columns: repeat(3, 1fr); } }
 
 	.srm { padding: var(--space-4) var(--space-5); border-radius: var(--radius-md); border: 1px solid var(--border-primary); background: var(--bg-secondary); }
 	.srm--ok { border-color: var(--border-success); }

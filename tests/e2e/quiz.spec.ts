@@ -174,9 +174,14 @@ test.describe('the interface', () => {
 			events.indexOf('plan_view'),
 		);
 
-		// Every event carries the arm, or the readout cannot be split by it.
+		// Every event of ours carries the arm, or the readout cannot be split by
+		// it. GTM's own lifecycle events (gtm.js, gtm.dom, gtm.load) are not
+		// ours and are excluded rather than asserted on.
 		const withoutVariant = await page.evaluate(
-			() => (window.dataLayer ?? []).filter((e) => !e.variant).length,
+			() =>
+				(window.dataLayer ?? []).filter(
+					(e) => !String(e.event ?? '').startsWith('gtm.') && !e.variant,
+				).length,
 		);
 		expect(withoutVariant).toBe(0);
 	});
