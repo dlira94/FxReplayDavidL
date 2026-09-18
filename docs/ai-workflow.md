@@ -1,53 +1,150 @@
-# AI workflow — what runs here, what would run in production
+# AI workflow
 
-The AI system in `.claude/` is sized for this challenge. This file separates what actually works in the repo from what a real growth team would wire up, so the gap is a stated design choice rather than something missing.
+How this was actually built. Two layers with different jobs, and a human
+between them who decides.
 
-For the record of who delegated what and where the output was corrected, see `docs/ai-log.md`. For the decisions behind these choices, `docs/decisions.md`.
+```
+Claude (chat)          strategy, research, first drafts, second opinion
+       ↕                        at checkpoints
+     David              decides · corrects · rejects
+       ↕                        every step
+Claude Code            execution: code, tests, docs, verification in a browser
+```
 
-## 1. What runs here
+**Claude Code executes, I decide, the chat reviews at the points that matter.**
+The separation is deliberate: the layer writing the code is the worst possible
+reviewer of it, because it shares every assumption that produced it.
 
-| Piece | Kind | What it does |
-|---|---|---|
-| `storybrand-copy` | Skill | Drafts and validates variant copy against the StoryBrand frame and the guardrails in `messaging.md` |
-| `add-tracking-event` | Skill | Adds an analytics event end to end: typed definition, call site, `analytics.md`, e2e assertion |
-| `pre-deploy-auditor` | Agent | A11y, performance budgets, SEO and tracking coverage against a production build in a real browser |
-| `growth-analyst` | Agent | Post-deploy experiment readout: conversion per variant, funnel, SRM, CWV, decision |
-| Mobbin | MCP | UI pattern research for the quiz, stepper and result screens |
-| Playwright | MCP | Drives the browser for the auditor and for e2e tests |
+---
 
-## 2. What is proposed, not available
+## Layer 1 — Claude (chat): strategy and review
 
-### Vercel MCP — deploys, logs, analytics
+Used before there was a repository, and at every checkpoint after.
 
-**Status: proposed for production. Disabled in this project** (decision D15).
+**Where the project came from.** The approach, the desk research on FX Replay
+and its audience, and the choice of which pains to test. Six pain angles came
+out of that research; I picked three — money, time, discipline — because they
+cover three different dimensions (an external cost, an external constraint, an
+internal problem) rather than three flavours of the same one
+(`research.md` §7, `decisions.md` D5).
 
-It was wired in and then removed. OAuth authorized on a Hobby scope never granted access to the project — `list_teams` returned empty and `get_project` answered `403 Forbidden`. On a Pro team with the integration installed at team scope, this is the piece that closes the loop between "the experiment moved" and "something shipped".
+**The documents came first, and the code followed them.** `brief.md`,
+`research.md`, `messaging.md`, `experience.md`, `api.md`, `analytics.md`,
+`experiment.md` and the first `CLAUDE.md` were all drafted in chat before a
+single component existed. That ordering is the reason the build stayed
+coherent: when Claude Code had to choose, the answer was usually already
+written down, and when it was not, that absence was itself the finding — twice
+the missing definition was the bug (`experience.md` §4 had a plan row with no
+options; `analytics.md` had a denominator with nowhere to live, D17).
 
-How the agents would use it:
+**Second opinion at checkpoints**, where I wanted a reader who had not just
+written the thing: the visual direction before implementing it, the
+architectural decisions, the review of `gtm-setup.md` before touching GTM, and
+the close of each block.
 
-**`growth-analyst`** — deploy state as the control variable for any reading of the data:
-- `list_deployments` / `get_deployment` — which build served the traffic in the window, and when it was promoted. A deploy inside the analysis window invalidates a before/after comparison; the agent should detect that itself instead of asking.
-- `get_runtime_logs` / `get_runtime_errors` — the real 5xx and 409 rates behind a drop in completion, separating a delivery failure from a copy effect. Today the agent can only see the 409s that reached the database.
-- `get_web_analytics` — page views and referrers as an independent cross-check on exposure counts when Postgres and GA4 disagree.
+## Layer 2 — Claude Code: execution
 
-**`pre-deploy-auditor`** — audit the preview that will actually be promoted:
-- `list_deployments` to resolve the branch's current preview URL rather than being handed one.
-- `get_deployment_build_logs` to catch a build warning that a green local build hides.
+| Piece | What it does |
+|---|---|
+| `CLAUDE.md` | The rules the executing layer cannot drift from: semantic tokens only, copy only from `messaging.md`, no PII in analytics, performance budgets, and the Vercel access boundary |
+| `storybrand-copy` (skill) | Drafts and validates variant copy against the StoryBrand frame and the guardrails. Step 5 — copy verbatim, then run the assertion — was added *after* the failure below |
+| `add-tracking-event` (skill) | An event end to end: typed definition, call site, `analytics.md`, e2e assertion. Four places, one step, so tracking cannot drift from the plan |
+| `pre-deploy-auditor` (agent) | A11y, budgets, SEO and experiment integrity against a real browser. Read-only. Ran before every merge |
+| `growth-analyst` (agent) | Post-deploy readout from `/api/stats`, applying the `experiment.md` decision rules. Deliberately pointed away from the PII endpoint (D37) |
+| Mobbin (MCP) | UI pattern research for the landing sections and the quiz |
+| Playwright (MCP) | Drove the browser for every behavioural check in this file |
 
-The rule in both cases: Vercel is operational context, never the conversion source of truth. That stays the Users API.
+**Settings do the enforcing, not good intentions.** `.claude/settings.json`
+pins the MCP servers to those two (D12), denies the Vercel CLI and `gh` because
+both are signed in to work accounts on this machine (D14), and denies reading
+`.env*`. Migrations ran with `node --env-file`, so credentials were used
+without ever entering the conversation.
 
-### GA4 MCP — acquisition and attribution
+### MCP proposed, not used
 
-**Status: proposed.** `growth-analyst` currently infers source and medium from the `utm_*` fields stored with each signup, which only covers traffic that reached step 1. A GA4 MCP would give it the exposure side — sessions, source/medium, campaign — so cost per account created becomes answerable, and the readout could segment by channel rather than flagging it as exploratory.
+- **Vercel MCP** — deploys, runtime logs, Web Analytics. Wired up and removed:
+  OAuth on a Hobby scope never granted project access (`403`). Disabled (D15);
+  deploy state is read by a human.
+- **GA4 MCP** — would give `growth-analyst` the acquisition side, so cost per
+  account created becomes answerable and channel segmentation stops being
+  exploratory.
 
-### What we deliberately don't propose
+---
 
-- **Writing to production from an agent.** Deploys go through `git push` and a human merge. An agent that can deploy is an agent that can deploy a mistake at 2 a.m.
-- **An LLM in the request path.** The practice plan is deterministic rules in `src/lib/plan.ts`: free, instant, testable, and it can't hallucinate a promise the copy guardrails forbid.
-- **An agent that edits copy autonomously.** `storybrand-copy` drafts; a human accepts. Copy is the independent variable of the experiment — silent edits would invalidate it.
+## Where the AI improved the execution
 
-## 3. Operating today without Vercel access
+Not "wrote code faster" — specific things a person under time pressure drops.
 
-Deploys happen on `git push` to `github-dlira94`; `main` is production, every branch gets a preview. **David reads deploy state and preview URLs from the Vercel dashboard** and passes the URL to the agents that need one. Claude verifies what it can locally — `npm run build`, `astro check`, unit and e2e tests — and reports what it pushed without claiming anything about the deploy.
+- **It measured instead of assuming, when asked to.** React was chosen in
+  `CLAUDE.md`; before writing the quiz it measured a trivial island at **67 KB
+  gzip against a 60 KB budget**, measured Preact at ~10 KB, and stopped for my
+  decision rather than picking a library on my behalf. Then it found the second
+  problem nobody had predicted: classic Zod does not tree-shake and put the
+  island 67% over the new budget (D29, D30).
+- **It found what the checks could not see.** A scoped CSS rule in
+  `Header.astro` compiled to a selector matching nothing — no build error, no
+  type error, a duplicate CTA wrapped across two lines on every phone. Later,
+  `clip-path` shrank an element's intersection rectangle to zero, so
+  `IntersectionObserver` never fired and twenty elements stayed invisible
+  forever. Both were silent. Both got browser assertions afterwards.
+- **It refused to fabricate.** No `aggregateRating` in the JSON-LD without
+  rating data. No invented figures on the social-proof bar — only `1M+` has a
+  source, so only `1M+` is a number. No "where to practice" row in the plan
+  preview while `experience.md` had not defined its options.
+- **It reported failure plainly.** Four e2e tests it could not make pass were
+  marked `fixme` with the reason attached and called out in its summary, rather
+  than deleted or left red.
+- **It caught its own bug reappearing inside its own fix.** After changing
+  `quiz_start` to fire on intent, its `onFocus` signal re-created the original
+  problem one line lower, because the island focuses its own input on mount. It
+  verified in a browser instead of assuming and added the guard.
 
-It's a slower loop with a human in the middle. It's also the honest one: the alternative on this machine was an identity belonging to a different account.
+## Where I corrected or rejected it
+
+Full record in [`ai-log.md`](ai-log.md). The ones that matter:
+
+- **It invented copy that read better than the approved copy** (Sep 18). Two
+  variants' hero and problem text were reconstructed from memory rather than
+  copied. Fluent, on-brand, consistent with the pain — and not what was
+  approved. It would have passed `storybrand-copy`'s own validation, because a
+  good invention obeys every guardrail. Copy is the *independent variable*
+  here, so a paraphrase does not fail: it runs for two weeks and answers a
+  question nobody asked. Fixed with an assertion that all 33 rendered strings
+  appear character-for-character in `messaging.md`, and the skill now ends by
+  running it.
+- **It cited a source that did not say what it claimed.** I told it futures
+  require a paid plan "per `research.md`". It checked, found the document does
+  not map markets to tiers, implemented my copy anyway because the domain call
+  was mine, and wrote the decision with the sourcing split explicit. I later
+  found the real source; it read that before citing it.
+- **Its first diagnosis of a flaky suite was wrong, and it said so.** It blamed
+  database latency. Measuring found two real causes — Astro server-renders an
+  island before hydrating, so tests were clicking inert markup, and `useEffect`
+  is deferred, so a step painted before it was persisted. The second was a
+  product bug the test had been correctly reporting. It corrected the decision
+  record rather than keeping the tidier story.
+- **A doc review turned into a code fix.** I found four errors in
+  `gtm-setup.md`; correcting one exposed that the API skipped `account_created`
+  for QA rows, which would have made the verification step I had just asked for
+  show nothing.
+- **I found a measurement bug no test could.** `quiz_start` fired when the
+  island hydrated. Because the quiz is inline, that counted everyone who
+  scrolled to the footer as a start. Every test passed: the events fired and
+  carried the right properties. No automated check knows what an event is
+  *supposed to mean* (D42).
+- **I found a focus bug by reading its own report.** It wrote that the island
+  focuses its input on mount and that it had guarded the analytics event
+  against that. It had fixed the metric and left the behaviour: scrolling past
+  the quiz stole focus, opening the keyboard on a phone (D44).
+
+## The pattern
+
+Every genuinely dangerous thing in this project was **silent** — no error, no
+failing test, plausible output. Dead CSS, a deadlocked observer, an inert GTM
+loader, invented copy, an event measuring the wrong thing.
+
+Automation catches loud failures. The quiet ones needed a browser, a
+second reader, or someone asking what a number was supposed to mean. That is
+the argument for the shape of this workflow: not that the AI is unreliable, but
+that it is *confidently* reliable in exactly the cases where confidence is the
+problem.
