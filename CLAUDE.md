@@ -19,6 +19,9 @@ Evaluators care about judgment, trade-offs, measurement and the AI workflow more
 | Every word on the page (3 variants) | `docs/messaging.md` |
 | Sections, quiz flow, states, plan rules, a11y | `docs/experience.md` |
 | API contract, data model, persistence | `docs/api.md` |
+| Event spec, funnel, data quality | `docs/analytics.md` |
+| Hypothesis, metrics, sample size, decision rules | `docs/experiment.md` |
+| Budgets, the `/` on-demand trade-off, fonts | `docs/performance.md` |
 | Past decisions — don't relitigate silently | `docs/decisions.md` |
 | Brand tokens | `docs/brand/tokens.css`, `docs/brand/README.md` |
 | AI system: what runs vs what's proposed | `docs/ai-workflow.md` |
