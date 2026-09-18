@@ -22,6 +22,14 @@ Source of truth for every word on the page. Components read copy from `src/conte
 **Plan preview section title:** "Here's what you'll get in 2 minutes"
 **Trust line under CTA:** "Free forever plan · No credit card"
 
+**SEO [shared]** — identical across arms on purpose: a title that varied by variant would give search engines whichever arm the crawler happened to be assigned.
+- Title: "Try FX Replay Free — Practice trading on real historical markets"
+- Meta description: "Practice on real historical markets with no money at risk. Answer a few quick questions and get a personalized practice plan. Free forever plan, no credit card."
+
+**Footer disclaimer [shared]:** "FX Replay is an educational practice tool. You practice on historical market data — no real money is involved. Trading live markets carries risk of loss."
+
+Stated plainly, once, in the footer: it is an honest description of what the product is, not a warning bolted on. Rendered at `--text-sm` in `--text-secondary`; never styled as an alert.
+
 **FAQ (shared)**
 - *Is it really free?* Yes. The free plan needs no credit card and doesn't expire.
 - *Do I trade real money?* No. You practice on real historical market data; no money is involved.
