@@ -120,45 +120,69 @@ The written thinking is as much the deliverable as the code.
 | **5. Measurement** | [`analytics.md`](docs/analytics.md) — event spec, funnel, data quality · [`experiment.md`](docs/experiment.md) — hypothesis, metrics, sample size, decision rules · [`gtm-setup.md`](docs/gtm-setup.md) — the setup, step by step |
 | **6. AI workflow** | [`ai-workflow.md`](docs/ai-workflow.md) — the two layers and how they fit · [`ai-log.md`](docs/ai-log.md) — what was delegated, corrected and rejected, with the reasoning |
 
-Cross-cutting: [`decisions.md`](docs/decisions.md) — 44 numbered decisions, each
+Cross-cutting: [`decisions.md`](docs/decisions.md) — 46 numbered decisions, each
 with its trade-off. [`performance.md`](docs/performance.md) — budgets, measured
 production numbers, and the costs that a Lighthouse score does not show.
 
-## Time spent, honestly
+## Scope & priorities
 
-**About 9 hours, in one session** — 17 September, ~8 pm to 18 September, ~5 am.
-The brief suggested 6.
+### What I built
 
-That number includes everything, not just the coding: preparation and desk
-research, isolating this work from the client accounts already signed in on this
-machine (the Vercel CLI and `gh` are both authenticated to other organisations,
-which is why they are denied in `.claude/settings.json` — see
-[D14](docs/decisions.md)), and learning Astro 7, which is new enough that its
-behaviour had to be checked against the installed version rather than recalled.
-Several decisions in `decisions.md` exist because a check like that came back
-different from what I expected.
+The whole path a visitor takes, instrumented end to end: a ten-section landing
+in three copy variants assigned server-side, a six-step quiz that converts to a
+free account, a deterministic practice plan, a Users API backed by Postgres,
+client and server-side analytics, and an internal dashboard that reads the
+experiment out with confidence intervals and a decision status.
 
-I went over because I chose depth in the parts I think the role is actually
-about — the experiment design, the measurement plan, and not shipping numbers I
-could not defend — rather than breadth. Given the same six hours I would cut the
-same things listed below, and I would not cut the statistics or the decision
-log.
+### What I prioritised, and why
 
-### What is deliberately not here
+**Measurement over surface area.** The brief asks for a conversion experiment,
+so the parts that decide whether a result is trustworthy got the most care:
+exposures stored server-side so both sides of the ratio come from the same
+place ([D17](docs/decisions.md)), a sample-ratio check that can invalidate the
+readout, Wilson intervals rather than the normal approximation because at a 3 %
+conversion rate the textbook interval goes below zero, and decision rules
+written down *before* any data existed ([`experiment.md`](docs/experiment.md)).
+A dashboard that says "Continue" while an interval already excludes zero is the
+whole point.
 
-- **Real authentication.** The signup and "Open FX Replay" are simulated. Out of
-  scope per [`brief.md`](docs/brief.md); it is also the largest gap and the
-  least interesting to fake.
-- **Rate limiting and managed bot protection.** There is a honeypot and a
-  user-agent heuristic. A public signup endpoint in production needs more —
-  named first in [`architecture.md`](docs/architecture.md).
+**Experiment integrity over features.** Everything that could make the three
+arms non-comparable was closed: assignment server-side with no flicker, a DOM
+skeleton byte-identical across variants, an identical CTA label, and QA traffic
+excluded at write time rather than filtered later
+([D18](docs/decisions.md), [D46](docs/decisions.md)). Copy is asserted
+character-for-character against `messaging.md`, because copy is the independent
+variable and a paraphrase quietly changes the question being asked.
+
+**Correctness of the things that fail silently.** Several defects here produced
+no error and no failing test — dead CSS, an observer that deadlocked its own
+reveal, a GTM loader that never ran, an event measuring the wrong thing. Those
+got browser-level verification and regression tests rather than a second look
+at the source.
+
+**Honest numbers over flattering ones.** Every performance figure is measured
+and dated, including the ones that are not free: GTM is 285 KiB and 100 % of the
+page's blocking time, and [`performance.md`](docs/performance.md) says so.
+
+### What I deliberately left out
+
+- **Real authentication.** Signup and "Open FX Replay" are simulated — out of
+  scope per [`brief.md`](docs/brief.md), and the largest gap.
+- **Rate limiting and managed bot protection.** A honeypot and a user-agent
+  heuristic ship; a public signup endpoint in production needs more.
 - **An outbox for GA4 delivery.** `account_created` retries with backoff, which
-  survives a blip and not an outage.
-- **Field performance data.** Every number in `performance.md` is lab data. The
-  LCP p75 guardrail in `experiment.md` needs CrUX or Vercel Web Analytics to
-  become a measurement.
-- **A screen-reader pass with a real screen reader.** The accessibility tree,
-  roles, names, focus order and contrast were verified programmatically and in a
-  browser; what VoiceOver actually announces was not.
+  survives a blip, not an outage.
+- **Field performance data.** Every number is lab data; the LCP p75 guardrail
+  needs CrUX or Vercel Analytics to become a measurement.
+- **A pass with a real screen reader.** Semantics, roles, focus order and
+  contrast were verified programmatically and in a browser; what VoiceOver
+  announces was not.
 - **Traffic.** The experiment is designed, instrumented and demonstrable on
   seeded data. It has never run.
+
+### What I would do next
+
+In this order: real auth, then rate limiting at the edge, then a durable outbox
+for analytics delivery, then feature flags so experiments can be started and
+stopped without a deploy. The reasoning for each is in
+[`architecture.md`](docs/architecture.md).

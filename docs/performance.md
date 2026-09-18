@@ -42,7 +42,7 @@ first.
    copy result, it is a delivery difference, and it invalidates the comparison.
 3. **The gap vs option B.** B (three prerendered pages + an edge rewrite) would serve HTML
    from the CDN. Measuring A's TTFB gives the size of what B would have bought, which is what
-   turns "we picked A for time budget" into a number.
+   turns "we picked A and deferred B" into a number.
 
 ### Measured — preview `e3yi11pms`, 2026-09-18 (3 Lighthouse runs)
 

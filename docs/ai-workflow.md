@@ -73,7 +73,8 @@ without ever entering the conversation.
 
 ## Where the AI improved the execution
 
-Not "wrote code faster" — specific things a person under time pressure drops.
+Not "wrote code faster" — specific things that get skipped when the priority is
+shipping the next thing.
 
 - **It measured instead of assuming, when asked to.** React was chosen in
   `CLAUDE.md`; before writing the quiz it measured a trivial island at **67 KB
