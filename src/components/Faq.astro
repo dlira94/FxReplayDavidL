@@ -1,0 +1,93 @@
+---
+import { SHARED_COPY } from '../content/shared';
+---
+
+<!-- <details> rather than JS: keyboard operable, announced correctly and
+     searchable by the browser's find-in-page, for zero kilobytes. -->
+<section class="section section--band" aria-labelledby="faq-title">
+	<div class="container container--narrow">
+		<h2 id="faq-title" class="section-title faq__title">Questions, answered</h2>
+
+		<div class="faq">
+			{
+				SHARED_COPY.faq.map((entry) => (
+					<details class="faq__item" name="faq">
+						<summary class="faq__question">
+							<span>{entry.question}</span>
+							<span class="faq__icon" aria-hidden="true" />
+						</summary>
+						<p class="faq__answer">{entry.answer}</p>
+					</details>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style>
+	.faq__title {
+		text-align: center;
+		margin-bottom: var(--space-7);
+	}
+
+	.faq {
+		display: grid;
+		gap: var(--space-3);
+	}
+
+	.faq__item {
+		background: var(--card-bg-secondary);
+		border: 1px solid var(--border-primary);
+		border-radius: var(--radius-lg);
+	}
+
+	.faq__question {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+		/* Separate rows give a comfortably large tap target for free. */
+		min-height: 3.5rem;
+		padding: var(--space-4) var(--space-5);
+		cursor: pointer;
+		font-size: var(--text-lg);
+		font-weight: var(--weight-emphasis);
+		list-style: none;
+	}
+
+	.faq__question::-webkit-details-marker {
+		display: none;
+	}
+
+	/* A plus that becomes a minus: state is visible without colour. */
+	.faq__icon {
+		position: relative;
+		flex-shrink: 0;
+		width: 1rem;
+		height: 1rem;
+	}
+
+	.faq__icon::before,
+	.faq__icon::after {
+		content: '';
+		position: absolute;
+		inset: 50% 0 auto 0;
+		height: 2px;
+		background: var(--text-secondary);
+		border-radius: var(--radius-full);
+		transition: transform var(--transition-fast);
+	}
+
+	.faq__icon::after {
+		transform: rotate(90deg);
+	}
+
+	.faq__item[open] .faq__icon::after {
+		transform: rotate(0deg);
+	}
+
+	.faq__answer {
+		padding: 0 var(--space-5) var(--space-5);
+		color: var(--text-secondary);
+	}
+</style>
