@@ -1,5 +1,6 @@
 ---
 import type { VariantCopy } from '../content/variants';
+import IconAlert from './icons/IconAlert.astro';
 
 interface Props {
 	copy: VariantCopy;
@@ -12,14 +13,20 @@ const { copy } = Astro.props;
      to the guide (D24). -->
 <section class="section" aria-labelledby="problem-title">
 	<div class="container container--narrow problem">
-		<h2 id="problem-title" class="section-title">{copy.problem.title}</h2>
-		<p class="problem__body">{copy.problem.body}</p>
+		<!-- tone="neutral": the villain never wears the brand (D24). -->
+		<IconAlert tone="neutral" />
+		<h2 id="problem-title" class="section-title reveal">{copy.problem.title}</h2>
+		<p class="problem__body reveal" data-reveal="90">{copy.problem.body}</p>
 	</div>
 </section>
 
 <style>
 	.problem {
 		text-align: center;
+	}
+
+	.problem :global(.icon) {
+		margin: 0 auto var(--space-4);
 	}
 
 	.problem__body {

@@ -1,11 +1,13 @@
 ---
 import { SHARED_COPY } from '../content/shared';
+import IconRoute from './icons/IconRoute.astro';
 ---
 
 <!-- The plan the guide gives you: numbers and connector in brand blue (D24). -->
 <section class="section section--band" aria-labelledby="steps-title">
 	<div class="container container--narrow">
-		<div class="steps__head">
+		<div class="steps__head reveal">
+			<IconRoute />
 			<span class="eyebrow">How it works</span>
 			<h2 id="steps-title" class="section-title">Three steps, about two minutes</h2>
 		</div>
@@ -13,7 +15,7 @@ import { SHARED_COPY } from '../content/shared';
 		<ol class="steps">
 			{
 				SHARED_COPY.steps.map((step, index) => (
-					<li class="steps__item">
+					<li class="steps__item reveal" data-reveal={index * 110}>
 						<span class="steps__number" aria-hidden="true">
 							{index + 1}
 						</span>
@@ -29,6 +31,10 @@ import { SHARED_COPY } from '../content/shared';
 	.steps__head {
 		text-align: center;
 		margin-bottom: var(--space-7);
+	}
+
+	.steps__head :global(.icon) {
+		margin: 0 auto var(--space-3);
 	}
 
 	.steps {

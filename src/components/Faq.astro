@@ -1,12 +1,16 @@
 ---
 import { SHARED_COPY } from '../content/shared';
+import IconHelp from './icons/IconHelp.astro';
 ---
 
 <!-- <details> rather than JS: keyboard operable, announced correctly and
      searchable by the browser's find-in-page, for zero kilobytes. -->
 <section class="section section--band" aria-labelledby="faq-title">
 	<div class="container container--narrow">
-		<h2 id="faq-title" class="section-title faq__title">Questions, answered</h2>
+		<div class="faq__head reveal">
+			<IconHelp />
+			<h2 id="faq-title" class="section-title faq__title">Questions, answered</h2>
+		</div>
 
 		<div class="faq">
 			{
@@ -25,9 +29,13 @@ import { SHARED_COPY } from '../content/shared';
 </section>
 
 <style>
-	.faq__title {
+	.faq__head {
 		text-align: center;
 		margin-bottom: var(--space-7);
+	}
+
+	.faq__head :global(.icon) {
+		margin: 0 auto var(--space-3);
 	}
 
 	.faq {

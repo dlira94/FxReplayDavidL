@@ -1,0 +1,15 @@
+---
+/** Decorative. Meaning lives in the text beside it, never in the icon. */
+interface Props { tone?: 'brand' | 'neutral' }
+const { tone = 'brand' } = Astro.props;
+---
+<svg class:list={['icon', `icon--${tone}`]} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" width="24" height="24">
+<path d="M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19"/><circle cx="10" cy="7.5" r="3.5"/><path d="M20 19v-1.5a3.5 3.5 0 0 0-2.6-3.4M15.5 4.2a3.5 3.5 0 0 1 0 6.6"/>
+</svg>
+<style>
+	.icon { width: 1.5rem; height: 1.5rem; }
+	/* Blue marks where FX Replay enters the story; the problem and the "before"
+	   panel take tone="neutral" instead (D24). */
+	.icon--brand { color: var(--text-link); }
+	.icon--neutral { color: var(--text-disabled); }
+</style>

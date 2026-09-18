@@ -1,17 +1,20 @@
 ---
 import { SHARED_COPY } from '../content/shared';
+import IconAlert from './icons/IconAlert.astro';
+import IconShield from './icons/IconShield.astro';
 ---
 
 <!-- The contrast carries the argument, so it never rests on colour alone: each
      panel is labelled and each list marker has a shape as well as a hue. -->
 <section class="section" aria-labelledby="outcome-title">
 	<div class="container">
-		<h2 id="outcome-title" class="section-title outcome__title">
+		<h2 id="outcome-title" class="section-title outcome__title reveal">
 			Two ways to learn this
 		</h2>
 
 		<div class="outcome">
-			<article class="outcome__panel outcome__panel--without">
+			<article class="outcome__panel outcome__panel--without reveal">
+				<IconAlert tone="neutral" />
 				<h3 class="outcome__label">Without FX Replay</h3>
 				<p class="outcome__text">
 					<span class="outcome__marker" aria-hidden="true">✗</span>
@@ -19,7 +22,8 @@ import { SHARED_COPY } from '../content/shared';
 				</p>
 			</article>
 
-			<article class="outcome__panel outcome__panel--with">
+			<article class="outcome__panel outcome__panel--with reveal" data-reveal="110">
+				<IconShield />
 				<h3 class="outcome__label">With FX Replay</h3>
 				<p class="outcome__text">
 					<span class="outcome__marker" aria-hidden="true">✓</span>
@@ -64,6 +68,10 @@ import { SHARED_COPY } from '../content/shared';
 		);
 	}
 
+		.outcome__panel :global(.icon) {
+		margin-bottom: var(--space-3);
+	}
+
 	.outcome__label {
 		font-size: var(--text-sm);
 		font-weight: var(--weight-emphasis);
@@ -72,7 +80,11 @@ import { SHARED_COPY } from '../content/shared';
 		color: var(--text-secondary);
 	}
 
-	.outcome__panel--with .outcome__label {
+	.outcome__panel--with 	.outcome__panel :global(.icon) {
+		margin-bottom: var(--space-3);
+	}
+
+	.outcome__label {
 		color: var(--text-link);
 	}
 

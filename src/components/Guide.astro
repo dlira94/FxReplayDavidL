@@ -1,14 +1,16 @@
 ---
 import { SHARED_COPY } from '../content/shared';
+import IconCompass from './icons/IconCompass.astro';
 ---
 
 <section class="section section--band" aria-labelledby="guide-title">
 	<div class="container guide">
-		<div class="guide__empathy">
+		<div class="guide__empathy reveal">
+			<IconCompass />
 			<span class="eyebrow">Your guide</span>
 			<h2 id="guide-title" class="guide__quote">{SHARED_COPY.guide.empathy}</h2>
 		</div>
-		<ul class="guide__claims">
+		<ul class="guide__claims reveal" data-reveal="120">
 			{
 				SHARED_COPY.guide.authority.map((claim) => (
 					<li class="guide__claim">
@@ -25,6 +27,10 @@ import { SHARED_COPY } from '../content/shared';
 	.guide {
 		display: grid;
 		gap: var(--space-7);
+	}
+
+		.guide__empathy :global(.icon) {
+		margin-bottom: var(--space-3);
 	}
 
 	.guide__quote {

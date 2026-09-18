@@ -90,6 +90,9 @@ const jsonLd = {
 			crossorigin
 		/>
 
+		<script is:inline>
+			document.documentElement.classList.add('js');
+		</script>
 		<meta name="generator" content={Astro.generator} />
 		<script
 			type="application/ld+json"
@@ -100,5 +103,79 @@ const jsonLd = {
 	<body>
 		<a class="skip-link" href="#main">Skip to content</a>
 		<slot />
+
+		{/* One observer for three jobs: text reveals, the social-proof counters
+		    and the header CTA. Inline so it costs no request, and it degrades to
+		    "everything visible, final numbers shown" if it never runs. */}
+		<script is:inline>
+			(function () {
+				var still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+				var root = document.documentElement;
+
+				function show(el) {
+					el.classList.add('is-visible');
+				}
+
+				// ── Text reveals ──
+				var reveals = document.querySelectorAll('.reveal');
+				if (still || !('IntersectionObserver' in window)) {
+					reveals.forEach(show);
+				} else {
+					var revealer = new IntersectionObserver(
+						function (entries) {
+							entries.forEach(function (e) {
+								if (!e.isIntersecting) return;
+								var el = e.target;
+								setTimeout(function () { show(el); }, +(el.dataset.reveal || 0));
+								revealer.unobserve(el);
+							});
+						},
+						{ rootMargin: '0px 0px -12% 0px', threshold: 0.15 }
+					);
+					reveals.forEach(function (el) { revealer.observe(el); });
+				}
+
+				// ── Counters ── the final value is already in the HTML; this only
+				// replaces it while counting, then puts it back verbatim.
+				var counters = document.querySelectorAll('[data-count-to]');
+				if (!still && 'IntersectionObserver' in window) {
+					var counter = new IntersectionObserver(
+						function (entries) {
+							entries.forEach(function (e) {
+								if (!e.isIntersecting) return;
+								var el = e.target;
+								counter.unobserve(el);
+								var final = el.textContent;
+								var to = +el.dataset.countTo;
+								var pre = el.dataset.countPrefix || '';
+								var post = el.dataset.countSuffix || '';
+								var compact = el.dataset.countCompact === 'true';
+								var fmt = new Intl.NumberFormat('en', compact ? { notation: 'compact' } : {});
+								var start = performance.now();
+								(function step(now) {
+									var t = Math.min((now - start) / 900, 1);
+									var eased = 1 - Math.pow(1 - t, 3);
+									el.textContent = t < 1 ? pre + fmt.format(Math.round(to * eased)) + post : final;
+									if (t < 1) requestAnimationFrame(step);
+								})(start);
+							});
+						},
+						{ threshold: 0.6 }
+					);
+					counters.forEach(function (el) { counter.observe(el); });
+				}
+
+				// ── Header CTA: hidden while the hero is on screen ──
+				var hero = document.querySelector('[data-hero]');
+				if (hero && 'IntersectionObserver' in window) {
+					new IntersectionObserver(
+						function (entries) {
+							root.toggleAttribute('data-past-hero', !entries[0].isIntersecting);
+						},
+						{ threshold: 0 }
+					).observe(hero);
+				}
+			})();
+		</script>
 	</body>
 </html>

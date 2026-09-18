@@ -2,6 +2,7 @@
 import type { VariantCopy } from '../content/variants';
 import { SAMPLE_PLAN, SHARED_COPY } from '../content/shared';
 import Cta from './Cta.astro';
+import IconTrendUp from './icons/IconTrendUp.astro';
 
 interface Props {
 	copy: VariantCopy;
@@ -14,14 +15,15 @@ const { copy } = Astro.props;
      offered, so it is the one card that carries the brand border (D24). -->
 <section class="section" id="plan-preview" aria-labelledby="plan-preview-title">
 	<div class="container container--narrow">
-		<div class="preview__head">
+		<div class="preview__head reveal">
+			<IconTrendUp />
 			<span class="eyebrow">The plan</span>
 			<h2 id="plan-preview-title" class="section-title">
 				{SHARED_COPY.planPreview.title}
 			</h2>
 		</div>
 
-		<article class="preview__card">
+		<article class="preview__card reveal" data-reveal="120">
 			<header class="preview__card-head">
 				<h3 class="preview__card-title">{copy.result.title}</h3>
 				<p class="preview__caption">{SAMPLE_PLAN.caption}</p>
@@ -49,6 +51,10 @@ const { copy } = Astro.props;
 	.preview__head {
 		text-align: center;
 		margin-bottom: var(--space-6);
+	}
+
+	.preview__head :global(.icon) {
+		margin: 0 auto var(--space-3);
 	}
 
 	.preview__card {

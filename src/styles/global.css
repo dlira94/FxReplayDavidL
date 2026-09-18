@@ -181,6 +181,86 @@ ol {
 	transform: translateY(0);
 }
 
+/* ── Entrance reveals ──
+ * The hidden state is gated on .js, so a visitor whose script never runs gets
+ * the content, not an empty page.
+ *
+ * The wipe is `mask-image`, NOT `clip-path`, and that is not a style choice.
+ * clip-path shrinks the element's intersection rectangle to zero area, so
+ * IntersectionObserver reports isIntersecting: false forever — and the only
+ * thing that would remove the clip is that observer's callback. The mask
+ * deadlocks its own reveal. Verified side by side in a browser: identical
+ * observer, identical scroll position, ratio 0 with clip-path and ratio 1
+ * without it. `mask-image` is a paint effect and leaves the box alone.
+ *
+ * A mask twice the element's height: black top half, transparent bottom half.
+ * Parked at `0 100%` the transparent half covers the text; sliding to `0 0`
+ * wipes it in from the bottom edge.
+ */
+.js .reveal {
+	opacity: 0;
+	transform: translateY(0.6rem);
+	-webkit-mask-image: linear-gradient(to bottom, #000 50%, transparent 50%);
+	mask-image: linear-gradient(to bottom, #000 50%, transparent 50%);
+	-webkit-mask-size: 100% 200%;
+	mask-size: 100% 200%;
+	-webkit-mask-position: 0 100%;
+	mask-position: 0 100%;
+	transition:
+		opacity 420ms ease-out,
+		transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1),
+		-webkit-mask-position 620ms cubic-bezier(0.22, 0.61, 0.36, 1),
+		mask-position 620ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.js .reveal.is-visible {
+	opacity: 1;
+	transform: none;
+	-webkit-mask-position: 0 0;
+	mask-position: 0 0;
+}
+
+/* The hero H1 is the LCP element, so it never starts invisible: it animates on
+ * load from 0.65 opacity, which still paints and still counts, and the motion
+ * is carried by the transform. */
+@media (prefers-reduced-motion: no-preference) {
+	.hero__headline {
+		animation: hero-rise 460ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+	}
+
+	.hero__sub,
+	.hero__actions,
+	.hero__trust {
+		animation: hero-rise 460ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+		animation-delay: 90ms;
+	}
+
+	.hero__trust {
+		animation-delay: 180ms;
+	}
+}
+
+@keyframes hero-rise {
+	from {
+		opacity: 0.65;
+		transform: translateY(0.5rem);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.js .reveal {
+		opacity: 1;
+		transform: none;
+		-webkit-mask-image: none;
+		mask-image: none;
+		transition: none;
+	}
+}
+
 /* ── Shared type helpers ── */
 .eyebrow {
 	display: block;
