@@ -186,6 +186,85 @@ test.describe('the interface', () => {
 		expect(withoutVariant).toBe(0);
 	});
 
+	test('lets arrow keys review options without submitting them', async ({
+		page,
+	}) => {
+		// WCAG 3.2.2: arrow keys move the selection in a radio group, so
+		// advancing on change meant a keyboard user could not read option 3
+		// without having submitted option 2 (D41).
+		await openQuiz(page);
+		await page.locator('.quiz__input').fill('Ana');
+		await page.locator('.quiz__submit').click();
+		await expect(page.locator('.quiz__count')).toHaveText('Step 2 of 6');
+
+		// The real keyboard path: the step change moves focus to the heading,
+		// so wait for that rather than racing it, then Tab into the group.
+		await expect(page.locator('.quiz__heading')).toBeFocused();
+		await page.keyboard.press('Tab');
+
+		const options = page.locator('.quiz__option input[type=radio]');
+		await expect(options.first()).toBeFocused();
+
+		await page.keyboard.press('ArrowDown');
+		await expect(options.nth(1)).toBeChecked();
+		await page.keyboard.press('ArrowDown');
+		await expect(options.nth(2)).toBeChecked();
+
+		// Two options reviewed, nothing submitted.
+		await expect(page.locator('.quiz__count')).toHaveText('Step 2 of 6');
+
+		// Enter commits.
+		await page.keyboard.press('Enter');
+		await expect(page.locator('.quiz__count')).toHaveText('Step 3 of 6');
+	});
+
+	test('offers a visible Continue button on choice steps', async ({ page }) => {
+		await openQuiz(page);
+		await page.locator('.quiz__input').fill('Ana');
+		await page.locator('.quiz__submit').click();
+		await expect(page.locator('.quiz__count')).toHaveText('Step 2 of 6');
+
+		const continueButton = page.locator('.quiz__fieldset .quiz__submit');
+		await expect(continueButton).toBeVisible();
+
+		// Nothing chosen yet: it says so rather than advancing.
+		await continueButton.click();
+		await expect(page.locator('.quiz__error')).toHaveText(
+			'Choose an option to continue.',
+		);
+		await expect(page.locator('.quiz__count')).toHaveText('Step 2 of 6');
+
+		await page.locator('.quiz__option input[type=radio]').first().click();
+		await expect(page.locator('.quiz__count')).toHaveText('Step 3 of 6');
+	});
+
+	test('does not fire quiz_start just because the quiz scrolled into view', async ({
+		page,
+	}) => {
+		// The quiz is inline, so firing on visibility counted everyone who
+		// reached the footer as a start and inflated the rate (D42).
+		await page.goto('/?variant=money');
+		await page.addStyleTag({ content: 'html { scroll-behavior: auto !important; }' });
+		await page.locator('#plan').scrollIntoViewIfNeeded();
+		await page.waitForTimeout(1500);
+
+		const started = await page.evaluate(
+			() => (window.dataLayer ?? []).filter((e) => e.event === 'quiz_start').length,
+		);
+		expect(started).toBe(0);
+
+		// Typing in the name field is intent.
+		await page.locator('.quiz__input').fill('A');
+		await expect
+			.poll(() =>
+				page.evaluate(
+					() =>
+						(window.dataLayer ?? []).filter((e) => e.event === 'quiz_start').length,
+				),
+			)
+			.toBe(1);
+	});
+
 	test('completes a choice step with the keyboard alone', async ({ page }) => {
 		await openQuiz(page);
 		await page.locator('.quiz__input').fill('Ana');
@@ -203,6 +282,9 @@ test.describe('the interface', () => {
 
 		await page.keyboard.press('Tab');
 		await page.keyboard.press('Space');
+		// Space selects; Enter commits (D41).
+		await expect(page.locator('.quiz__count')).toHaveText('Step 2 of 6');
+		await page.keyboard.press('Enter');
 		await expect(page.locator('.quiz__count')).toHaveText('Step 3 of 6');
 	});
 
