@@ -1,78 +1,94 @@
 ---
 import { SHARED_COPY } from '../content/shared';
+import IconShield from './icons/IconShield.astro';
+import IconStar from './icons/IconStar.astro';
+import IconUsers from './icons/IconUsers.astro';
 
-const [tradersClaim, ...featureClaims] = SHARED_COPY.guide.authority;
-
-// "1M+" is the only figure with a source (docs/research.md), so it is the only
-// one rendered as a number. The other two are capability labels — inventing
-// figures for them would be inventing proof.
-const tradersFigure = '1M+';
-const tradersLabel = tradersClaim.replace('Trusted by 1M+ ', '');
+const icons = [IconUsers, IconStar, IconShield];
 ---
 
-<section class="section section--band proof" aria-label="Why traders trust FX Replay">
+<section
+	class="section section--band proof"
+	aria-label="Why traders trust FX Replay"
+>
 	<div class="container proof__grid">
-		<div class="proof__item proof__item--figure">
-			<p class="proof__figure">{tradersFigure}</p>
-			<p class="proof__label">{tradersLabel}</p>
-		</div>
 		{
-			featureClaims.map((claim) => (
-				<div class="proof__item">
-					<p class="proof__label proof__label--feature">{claim}</p>
-				</div>
-			))
+			SHARED_COPY.socialProof.map((item, i) => {
+				const Icon = icons[i];
+				return (
+					<div class="proof__item reveal" data-reveal={i * 90}>
+						<Icon />
+						{/* The final value is in the HTML from the start: the counter
+						    only borrows the element while it runs, so a visitor with
+						    no JS, or one who never scrolls here, still reads it. */}
+						<p
+							class="proof__figure"
+							data-count-to={item.countTo ?? undefined}
+							data-count-suffix={item.countTo ? item.suffix : undefined}
+							data-count-compact={item.compact ? 'true' : undefined}
+						>
+							{item.figure}
+						</p>
+						<p class="proof__title">{item.title}</p>
+						<p class="proof__body">{item.body}</p>
+					</div>
+				);
+			})
 		}
 	</div>
 </section>
 
 <style>
 	.proof {
-		/* Tight against the hero: it validates before doubt sets in. */
-		padding-block: var(--space-7);
+		padding-block: var(--space-8);
 	}
 
 	.proof__grid {
 		display: grid;
-		gap: var(--space-5);
+		gap: var(--space-6);
+	}
+
+	.proof__item {
+		display: grid;
+		justify-items: start;
+		gap: var(--space-1);
 	}
 
 	.proof__item + .proof__item {
-		padding-top: var(--space-5);
+		padding-top: var(--space-6);
 		border-top: 1px solid var(--border-primary);
 	}
 
 	.proof__figure {
+		margin-top: var(--space-2);
 		font-family: var(--font-heading);
 		font-weight: var(--weight-heading);
 		font-size: var(--text-2xl);
 		line-height: var(--leading-tight);
+		/* Fixed-width digits: without this the box jumps on every frame of the
+		   count and the whole row reflows. */
+		font-variant-numeric: tabular-nums;
 	}
 
-	.proof__label {
+	.proof__title {
+		color: var(--text-primary);
+		font-weight: var(--weight-emphasis);
+	}
+
+	.proof__body {
 		color: var(--text-secondary);
 		font-size: var(--text-sm);
-	}
-
-	.proof__item--figure .proof__label {
-		margin-top: var(--space-1);
-	}
-
-	.proof__label--feature {
-		color: var(--text-primary);
-		font-size: var(--text-base);
 	}
 
 	@media (min-width: 48rem) {
 		.proof__grid {
 			grid-template-columns: repeat(3, 1fr);
-			gap: var(--space-6);
-			align-items: center;
+			gap: var(--space-7);
 		}
 
 		.proof__item + .proof__item {
 			padding-top: 0;
-			padding-left: var(--space-6);
+			padding-left: var(--space-7);
 			border-top: none;
 			border-left: 1px solid var(--border-primary);
 		}
