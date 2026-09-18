@@ -44,27 +44,36 @@ first.
    from the CDN. Measuring A's TTFB gives the size of what B would have bought, which is what
    turns "we picked A for time budget" into a number.
 
-### Measured — preview `jpmayivtm`, 2026-09-18
+### Measured — preview `q0l88ugm2`, 2026-09-18 (3 Lighthouse runs)
 
 | Metric | Value | Budget |
 |---|---|---|
-| Lighthouse Performance (mobile) | **99** | ≥ 95 ✅ |
-| Accessibility / Best Practices | **100 / 100** | 100 ✅ |
-| SEO | 66 on preview — `is-crawlable` only, because preview is `noindex` by design. Every other SEO audit scores 1, so production reads 100 | 100 (confirm in production) |
-| LCP | **1.7 s** | < 2.0 ✅ |
-| CLS | **0** | < 0.05 ✅ |
-| TBT (INP proxy) | **0 ms** | — ✅ |
-| Application JS | **0 KB** | < 60 KB ✅ |
+| Lighthouse Performance (mobile) | **99–100** (100, 99, 99) | ≥ 95 ✅ |
+| Accessibility / Best Practices | **100 / 100** (3/3 runs) | 100 ✅ |
+| SEO | 69 on preview — `is-crawlable` is the *only* failing audit, because preview is `noindex` by design. Every other SEO audit passes, so production reads 100 | 100 (confirm in production) |
+| LCP | **1.3 / 1.7 / 1.7 s** | < 2.0 ✅ |
+| CLS | **0** (3/3 runs) | < 0.05 ✅ |
+| TBT (INP proxy) | **0 ms** (3/3 runs) | < 200 ✅ |
+| Application JS | **0 bytes, 0 script requests** | < 60 KB ✅ |
+| Total page weight | 62 KiB (doc 20.6 + CSS 19.3 + 3 fonts 50.9 + SVG/favicon 1.8) | — |
 
 **The D16 cost, quantified.** `/` answers `private, no-store` with `x-vercel-cache: MISS`
-on every request, as it must. Warm TTFB on `/` (a function) measured 337–359 ms, median
-≈ 350 ms; a CDN hit on `/fonts/*.woff2` from the same client measured ≈ 233 ms.
+on every request, as it must — a shared cache would pin every visitor to one arm.
 
-→ **≈ 117 ms of warm function overhead** is what option B would have bought back. LCP still
-lands at 1.7 s, so the trade-off is affordable at this page weight. This is a **floor, not
-the worst case**: every measurement hit a warm instance, so cold start is not in the number.
-Read p75/p95 TTFB from the Vercel dashboard after an idle period before treating 117 ms as
-the answer.
+Two numbers, and they measure different things:
+
+| | Value | What it is |
+|---|---|---|
+| Lighthouse `server-response-time` | **70 ms** | server work on the root document |
+| curl TTFB, 12 warm samples | min 317 · **median 343** · p90 350 · max 403 ms | end-to-end from a distant client to `sfo1`, network RTT included |
+
+Quote **70 ms as server time** and 343 ms as end-to-end from far away. The earlier "≈117 ms
+of function overhead vs a CDN hit" came from comparing curl-to-curl on the same client and
+is the fairer like-for-like figure for what option B would buy back.
+
+LCP lands at 1.3–1.7 s, so the trade-off is affordable at this page weight. Still a **floor,
+not the worst case**: every sample hit a warm instance. Read p75/p95 from the Vercel
+dashboard after an idle period before treating any of this as the ceiling.
 
 ### Where the numbers go
 
@@ -94,9 +103,11 @@ header route in `.vercel/output/config.json`, but it sits *after* `{ "handle": "
 so for a file the filesystem already served it never runs. Every repeat visit revalidated the
 CSS and all three fonts.
 
-A root `vercel.json` now sets the headers explicitly. **Unverified**: it has not been through
-a deployment yet, so confirm the response headers on the next preview before believing this
-paragraph.
+A root `vercel.json` now sets the headers explicitly, and **this is verified on `q0l88ugm2`**:
+`/_astro/*.css` and `/fonts/*.woff2` return `public, max-age=31536000, immutable`,
+`/brand/*.svg` returns `public, max-age=604800`. The control case proves the rules are what
+changed it — `/favicon.svg`, which no rule covers, still returns the adapter default
+`public, max-age=0, must-revalidate`. `handle: filesystem` does not override `vercel.json`.
 
 ## Fonts
 
